@@ -6,6 +6,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const rollCountDisplay = document.getElementById('roll-count');
     const luckBonusDisplay = document.getElementById('luck-bonus');
     const secretButton = document.getElementById('secret-button');
+    const inventoryContainer = document.getElementById('inventory-items');
+    const inventoryCountDisplay = document.getElementById('inventory-count');
+    const coinCountDisplay = document.getElementById('coin-count');
+    const buyLuckButton = document.getElementById('buy-luck-button');
 
     let isAutoRolling = false;
     let autoRollInterval;
@@ -40,6 +44,87 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function updateInventoryDisplay(inventory) {
+        inventoryContainer.innerHTML = '';
+        inventoryCountDisplay.textContent = inventory.length;
+
+        inventory.forEach(rarity => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'inventory-item';
+            itemDiv.dataset.rarity = rarity;
+
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.style.backgroundColor = rarityColors[rarity];
+            badge.textContent = rarity;
+
+            const sellButton = document.createElement('button');
+            sellButton.className = 'btn btn-sm btn-outline-warning sell-button';
+            sellButton.dataset.rarity = rarity;
+            sellButton.innerHTML = `Sell (${rarityValues[rarity]} <i class="fas fa-coins"></i>)`;
+
+            sellButton.addEventListener('click', () => sellItem(rarity));
+
+            itemDiv.appendChild(badge);
+            itemDiv.appendChild(sellButton);
+            inventoryContainer.appendChild(itemDiv);
+        });
+    }
+
+    async function sellItem(rarity) {
+        try {
+            const response = await fetch(`/sell/${rarity}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update displays
+                coinCountDisplay.textContent = data.coins;
+                updateInventoryDisplay(data.inventory);
+
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Sold ${rarity} for ${data.value} coins!`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                console.error('Failed to sell item:', data.error);
+            }
+        } catch (error) {
+            console.error('Error selling item:', error);
+        }
+    }
+
+    // Buy luck functionality
+    buyLuckButton.addEventListener('click', async function() {
+        try {
+            const response = await fetch('/buy-luck');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update displays
+                coinCountDisplay.textContent = data.coins;
+                luckBonusDisplay.textContent = data.total_luck + 'x';
+
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = 'Purchased +1 Luck!';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Failed to buy luck';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error buying luck:', error);
+        }
+    });
+
     async function performRoll() {
         // Disable button and show spinner
         rollButton.disabled = true;
@@ -49,6 +134,10 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const response = await fetch('/roll');
             const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to roll');
+            }
 
             // Hide spinner
             spinner.classList.add('d-none');
@@ -69,6 +158,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update stats
             rollCountDisplay.textContent = data.roll_count;
             luckBonusDisplay.textContent = data.luck_bonus + 'x';
+            coinCountDisplay.textContent = data.coins;
+
+            // Update inventory
+            updateInventoryDisplay(data.inventory);
 
             // Enable auto-roll if unlocked
             if (data.can_auto_roll) {
@@ -83,9 +176,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Error:', error);
-            rarityText.textContent = 'Error occurred!';
+            rarityText.textContent = error.message || 'Error occurred!';
             rarityText.style.color = 'red';
+            rarityText.classList.remove('d-none');
+            spinner.classList.add('d-none');
             stopAutoRoll();
+
+            // Show error notification
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+            notification.textContent = error.message || 'Error occurred while rolling!';
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
         }
 
         // Re-enable button

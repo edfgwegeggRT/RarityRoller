@@ -67,3 +67,38 @@
     box-shadow: 0 0 10px rgba(255,255,0,1); /* Stronger glow on hover */
     transform: translateX(-50%) scale(1.2); /* Slight scaling effect on hover */
 }
+
+.inventory-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.inventory-item .badge {
+    font-size: 0.9rem;
+    padding: 0.3rem 0.6rem;
+}
+
+.inventory-item .sell-button {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+}
+
+.shop-item {
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.shop-item p {
+    margin-bottom: 0.5rem;
+}
+
+#inventory-items {
+    min-height: 100px;
+}
