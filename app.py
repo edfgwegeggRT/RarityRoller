@@ -83,8 +83,8 @@ def sell_item(rarity):
 @app.route('/buy-luck')
 def buy_luck():
     try:
-        if session['coins'] >= 100:
-            session['coins'] -= 100
+        if session['coins'] >= 50:
+            session['coins'] -= 50
             session['purchased_luck'] += 1
             session.modified = True
             return jsonify({
@@ -120,6 +120,35 @@ def roll():
         for rarity, info in RARITY_TIERS.items():
             if roll_number <= (100000 / info["chance"]) * luck:
                 result = rarity
+
+@app.route('/sell-all')
+def sell_all():
+    try:
+        if not session['inventory']:
+            return jsonify({"error": "No items in inventory"}), 400
+            
+        total_value = 0
+        for rarity in session['inventory']:
+            total_value += RARITY_TIERS[rarity]['value']
+            
+        # Calculate bonus coins: 1 coin for every 2 rarities
+        rarity_bonus = len(session['inventory']) // 2
+        total_value += rarity_bonus
+            
+        session['coins'] += total_value
+        session['inventory'] = []
+        session.modified = True
+        
+        return jsonify({
+            "success": True,
+            "coins": session['coins'],
+            "inventory": session['inventory'],
+            "value": total_value
+        })
+    except Exception as e:
+        logger.error(f"Error selling all items: {e}")
+        return jsonify({"error": "Failed to sell all items"}), 500
+
                 break
 
         # Add to inventory
