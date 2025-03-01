@@ -127,10 +127,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Buy luck functionality
-    const luckCostDisplay = document.getElementById('luck-cost');
-    const luckStatusDisplay = document.getElementById('luck-status');
-    const toggleLuckButton = document.getElementById('toggle-luck-button');
-    
     buyLuckButton.addEventListener('click', async function() {
         try {
             const response = await fetch('/buy-luck');
@@ -140,11 +136,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update displays
                 coinCountDisplay.textContent = data.coins;
                 luckBonusDisplay.textContent = data.total_luck + 'x';
-                
-                // Update the luck cost display for next level
-                if (luckCostDisplay) {
-                    luckCostDisplay.textContent = data.luck_cost;
-                }
 
                 // Show success message
                 const notification = document.createElement('div');
@@ -163,39 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error buying luck:', error);
         }
-    });
-    
-    // Toggle luck functionality
-    toggleLuckButton.addEventListener('click', async function() {
-        try {
-            const response = await fetch('/toggle-luck');
-            const data = await response.json();
-            
-            if (response.ok) {
-                // Update luck status
-                luckStatusDisplay.textContent = data.luck_active ? 'ON' : 'OFF';
-                
-                // Update the luck multiplier display
-                luckBonusDisplay.textContent = data.total_luck + 'x';
-                
-                // Update button styling based on state
-                if (data.luck_active) {
-                    toggleLuckButton.classList.replace('btn-outline-danger', 'btn-outline-primary');
-                } else {
-                    toggleLuckButton.classList.replace('btn-outline-primary', 'btn-outline-danger');
-                }
-                
-                // Show message
-                const notification = document.createElement('div');
-                notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = `Luck turned ${data.luck_active ? 'ON' : 'OFF'}`;
-                document.body.appendChild(notification);
-                setTimeout(() => notification.remove(), 2000);
-            }
-        } catch (error) {
-            console.error('Error toggling luck:', error);
-        }
-    });
     });
 
     async function performRoll() {
