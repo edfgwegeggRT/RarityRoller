@@ -12,16 +12,16 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 
 RARITY_TIERS = {
-    "Secret": {"chance": 1000000, "color": "#FFD700", "value": 1000},  # Gold
-    "Ancient": {"chance": 100000, "color": "#4B0082", "value": 500},  # Indigo
-    "Jack Attack": {"chance": 50000, "color": "#008000", "value": 250},  # Green
-    "Mythical": {"chance": 10000, "color": "#FF0000", "value": 100},  # Red
-    "Divine": {"chance": 5000, "color": "#E6E6FA", "value": 50},  # Lavender
-    "Legendary": {"chance": 1000, "color": "#FFA500", "value": 25},  # Orange
-    "Epic": {"chance": 100, "color": "#800080", "value": 10},  # Purple
-    "Rare": {"chance": 20, "color": "#0000FF", "value": 5},  # Blue
-    "Good": {"chance": 5, "color": "#008000", "value": 2},  # Green
-    "Uncommon": {"chance": 2, "color": "#808080", "value": 1},  # Gray
+    "Secret": {"chance": 1000000, "color": "#FFD700", "value": 2000000},  # Gold
+    "Ancient": {"chance": 100000, "color": "#4B0082", "value": 200000},  # Indigo
+    "Jack Attack": {"chance": 50000, "color": "#008000", "value": 100000},  # Green
+    "Mythical": {"chance": 10000, "color": "#FF0000", "value": 20000},  # Red
+    "Divine": {"chance": 5000, "color": "#E6E6FA", "value": 10000},  # Lavender
+    "Legendary": {"chance": 1000, "color": "#FFA500", "value": 2000},  # Orange
+    "Epic": {"chance": 100, "color": "#800080", "value": 200},  # Purple
+    "Rare": {"chance": 20, "color": "#0000FF", "value": 40},  # Blue
+    "Good": {"chance": 5, "color": "#008000", "value": 10},  # Green
+    "Uncommon": {"chance": 2, "color": "#808080", "value": 4},  # Gray
 }
 
 @app.route('/')
