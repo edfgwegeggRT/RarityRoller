@@ -100,6 +100,16 @@ def roll():
         logger.error(f"Error during roll: {e}")
         return jsonify({"error": "An error occurred during roll"}), 500
 
+@app.route('/reset-cookies')
+def reset_cookies():
+    try:
+        response = make_response(jsonify({"success": True}))
+        response.delete_cookie('used_super_luck')
+        return response
+    except Exception as e:
+        logger.error(f"Error resetting cookies: {e}")
+        return jsonify({"error": "Failed to reset cookies"}), 500
+
 if __name__ == '__main__':
     logger.info(f"Starting server on port 5000")
     app.run(host='0.0.0.0', port=5000, debug=True)
