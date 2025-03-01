@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const coinCountDisplay = document.getElementById('coin-count');
     const buyLuckButton = document.getElementById('buy-luck-button');
     const sellAllButton = document.getElementById('sell-all-button');
-    const autoSellToggles = document.querySelectorAll('.auto-sell-toggle'); // Added
+    const autoSellToggles = document.querySelectorAll('.auto-sell-toggle');
 
 
     let isAutoRolling = false;
@@ -26,12 +26,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 // Update displays
                 coinCountDisplay.textContent = data.coins;
-                updateInventoryDisplay(data.inventory);
+                updateInventoryDisplay(data.inventory, data.locked_items);
 
                 // Show success message
                 const notification = document.createElement('div');
                 notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = `Sold all items for ${data.value} coins!`;
+                notification.textContent = `Sold all unlocked items for ${data.value} coins!`;
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 2000);
             } else {
@@ -77,55 +77,129 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function updateInventoryDisplay(inventory) {
+    function updateInventoryDisplay(inventory, lockedItems = []) {
         inventoryContainer.innerHTML = '';
         inventoryCountDisplay.textContent = inventory.length;
 
-        inventory.forEach(rarity => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'inventory-item';
-            itemDiv.dataset.rarity = rarity;
+        inventory.forEach((item, index) => {
+            const itemIdentifier = `${index}:${item}`;
+            const isLocked = lockedItems.includes(itemIdentifier);
+
+            const itemElement = document.createElement('div');
+            itemElement.className = `inventory-item${isLocked ? ' locked-item' : ''}`;
+            itemElement.dataset.rarity = item;
+            itemElement.dataset.index = index;
 
             const badge = document.createElement('span');
             badge.className = 'badge';
-            badge.style.backgroundColor = rarityColors[rarity];
-            badge.textContent = rarity;
+            badge.style.backgroundColor = rarityColors[item];
+            badge.textContent = item;
+
+            if (isLocked) {
+                const lockIcon = document.createElement('i');
+                lockIcon.className = 'fas fa-lock text-warning ms-1';
+                badge.appendChild(lockIcon);
+            }
+
+            const buttonGroup = document.createElement('div');
+            buttonGroup.className = 'btn-group w-100';
 
             const sellButton = document.createElement('button');
             sellButton.className = 'btn btn-sm btn-outline-warning sell-button';
-            sellButton.dataset.rarity = rarity;
-            sellButton.innerHTML = `Sell (${rarityValues[rarity]} <i class="fas fa-coins"></i>)`;
+            sellButton.dataset.rarity = item;
+            sellButton.dataset.index = index;
+            sellButton.dataset.value = rarityValues[item];
+            sellButton.innerHTML = `Sell (${rarityValues[item]} <i class="fas fa-coins"></i>)`;
 
-            sellButton.addEventListener('click', () => sellItem(rarity));
-
-            itemDiv.appendChild(badge);
-            itemDiv.appendChild(sellButton);
-            inventoryContainer.appendChild(itemDiv);
-        });
-    }
-
-    async function sellItem(rarity) {
-        try {
-            const response = await fetch(`/sell/${rarity}`);
-            const data = await response.json();
-
-            if (response.ok) {
-                // Update displays
-                coinCountDisplay.textContent = data.coins;
-                updateInventoryDisplay(data.inventory);
-
-                // Show success message
-                const notification = document.createElement('div');
-                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = `Sold ${rarity} for ${data.value} coins!`;
-                document.body.appendChild(notification);
-                setTimeout(() => notification.remove(), 2000);
-            } else {
-                console.error('Failed to sell item:', data.error);
+            if (isLocked) {
+                sellButton.disabled = true;
             }
-        } catch (error) {
-            console.error('Error selling item:', error);
-        }
+
+            const lockButton = document.createElement('button');
+            lockButton.className = `btn btn-sm ${isLocked ? 'btn-warning' : 'btn-outline-secondary'} lock-button`;
+            lockButton.dataset.index = index;
+            lockButton.innerHTML = `<i class="fas ${isLocked ? 'fa-unlock' : 'fa-lock'}"></i>`;
+
+            // Add event listener to new sell button
+            sellButton.addEventListener('click', async function() {
+                try {
+                    const response = await fetch(`/sell/${item}/${index}`);
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // Update displays
+                        coinCountDisplay.textContent = data.coins;
+                        updateInventoryDisplay(data.inventory, data.locked_items);
+
+                        // Show success message
+                        const notification = document.createElement('div');
+                        notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                        notification.textContent = `Sold ${item} for ${data.value} coins!`;
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 2000);
+                    } else {
+                        // Show error message
+                        const notification = document.createElement('div');
+                        notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                        notification.textContent = data.error || 'Failed to sell item';
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 2000);
+                    }
+                } catch (error) {
+                    console.error('Error selling item:', error);
+                }
+            });
+
+            // Add event listener to lock button
+            lockButton.addEventListener('click', async function() {
+                try {
+                    const response = await fetch(`/toggle-lock/${index}`);
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // Update the inventory display to reflect the lock status change
+                        const currentItems = Array.from(document.querySelectorAll('.inventory-item')).map(el => el.dataset.rarity);
+                        const lockedItemsList = Array.from(document.querySelectorAll('.locked-item')).map(el => `${el.dataset.index}:${el.dataset.rarity}`);
+
+                        // Toggle the locked status for this item
+                        if (data.is_locked) {
+                            lockedItemsList.push(`${index}:${item}`);
+                        } else {
+                            const itemToRemove = `${index}:${item}`;
+                            const itemIndex = lockedItemsList.indexOf(itemToRemove);
+                            if (itemIndex !== -1) {
+                                lockedItemsList.splice(itemIndex, 1);
+                            }
+                        }
+
+                        updateInventoryDisplay(currentItems, lockedItemsList);
+
+                        // Show success message
+                        const notification = document.createElement('div');
+                        notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
+                        notification.textContent = `Item ${data.is_locked ? 'locked' : 'unlocked'}!`;
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 2000);
+                    } else {
+                        // Show error message
+                        const notification = document.createElement('div');
+                        notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                        notification.textContent = data.error || 'Failed to toggle lock';
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 2000);
+                    }
+                } catch (error) {
+                    console.error('Error toggling lock:', error);
+                }
+            });
+
+            buttonGroup.appendChild(sellButton);
+            buttonGroup.appendChild(lockButton);
+
+            itemElement.appendChild(badge);
+            itemElement.appendChild(buttonGroup);
+            inventoryContainer.appendChild(itemElement);
+        });
     }
 
     // Buy luck functionality
@@ -322,7 +396,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Update the inventory display
-                updateInventoryDisplay(data.inventory);
+                const lockedItems = Array.from(document.querySelectorAll('.locked-item')).map(el => `${el.dataset.index}:${el.dataset.rarity}`);
+                updateInventoryDisplay(data.inventory, lockedItems);
                 coinCountDisplay.textContent = data.coins;
 
                 // Show the result
