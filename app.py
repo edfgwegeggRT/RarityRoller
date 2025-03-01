@@ -49,6 +49,10 @@ def index():
         return "An error occurred", 500
 
 def calculate_luck(roll_count):
+    # If luck is toggled off, return 1
+    if not session.get('luck_active', True):
+        return 1
+        
     base_luck = 1 + (roll_count // 100)  # Base luck from rolls
     purchased_luck = session.get('purchased_luck', 0)  # Luck from shop
 
@@ -83,20 +87,46 @@ def sell_item(rarity):
 @app.route('/buy-luck')
 def buy_luck():
     try:
-        if session['coins'] >= 50:
-            session['coins'] -= 50
+        # Calculate the cost based on current luck level
+        # Level 1: 50, Level 2: 200, Level 3: 800, etc.
+        current_level = session.get('purchased_luck', 0)
+        cost = 50 * (4 ** current_level)
+        
+        if session['coins'] >= cost:
+            session['coins'] -= cost
             session['purchased_luck'] += 1
             session.modified = True
             return jsonify({
                 "success": True,
                 "coins": session['coins'],
                 "purchased_luck": session['purchased_luck'],
-                "total_luck": calculate_luck(session['roll_count'])
+                "total_luck": calculate_luck(session['roll_count']),
+                "next_cost": 50 * (4 ** session['purchased_luck'])
             })
-        return jsonify({"error": "Not enough coins"}), 400
+        return jsonify({"error": f"Not enough coins! Luck level {current_level + 1} costs {cost} coins"}), 400
     except Exception as e:
         logger.error(f"Error buying luck: {e}")
         return jsonify({"error": "Failed to buy luck"}), 500
+
+@app.route('/toggle-luck')
+def toggle_luck():
+    try:
+        # If luck_active doesn't exist, initialize it to True
+        if 'luck_active' not in session:
+            session['luck_active'] = True
+        
+        # Toggle the state
+        session['luck_active'] = not session.get('luck_active')
+        session.modified = True
+        
+        return jsonify({
+            "success": True,
+            "luck_active": session['luck_active'],
+            "total_luck": calculate_luck(session['roll_count']) if session['luck_active'] else 1
+        })
+    except Exception as e:
+        logger.error(f"Error toggling luck: {e}")
+        return jsonify({"error": "Failed to toggle luck"}), 500
 
 @app.route('/roll')
 def roll():

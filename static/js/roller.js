@@ -136,6 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update displays
                 coinCountDisplay.textContent = data.coins;
                 luckBonusDisplay.textContent = data.total_luck + 'x';
+                document.getElementById('luck-cost').textContent = data.next_cost;
 
                 // Show success message
                 const notification = document.createElement('div');
@@ -153,6 +154,47 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error buying luck:', error);
+        }
+    });
+    
+    // Toggle luck functionality
+    const toggleLuckButton = document.getElementById('toggle-luck-button');
+    const luckStatusDisplay = document.getElementById('luck-status');
+    
+    toggleLuckButton.addEventListener('click', async function() {
+        try {
+            const response = await fetch('/toggle-luck');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update displays
+                luckBonusDisplay.textContent = data.total_luck + 'x';
+                
+                // Update luck status badge
+                if (data.luck_active) {
+                    luckStatusDisplay.textContent = 'ON';
+                    luckStatusDisplay.className = 'badge bg-success';
+                } else {
+                    luckStatusDisplay.textContent = 'OFF';
+                    luckStatusDisplay.className = 'badge bg-danger';
+                }
+
+                // Show status message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Luck turned ${data.luck_active ? 'ON' : 'OFF'}`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Failed to toggle luck';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error toggling luck:', error);
         }
     });
 
