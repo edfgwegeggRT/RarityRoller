@@ -202,14 +202,16 @@ def reset_cookies():
 @app.route('/reset-all')
 def reset_all():
     try:
-        # Reset the player's stats
+        # Reset the player's stats to exact values
         session['coins'] = 0
+        # Always set to exactly 1, not 2 or 5
         session['purchased_luck'] = 1
         session['inventory'] = []
         session.modified = True
+        logger.info(f"Reset stats - luck set to exactly 1")
         return jsonify({
             "success": True,
-            "message": "All stats reset to default values"
+            "message": "All stats reset to default values: coins=0, luck=1"
         })
     except Exception as e:
         logger.error(f"Error resetting all stats: {e}")
