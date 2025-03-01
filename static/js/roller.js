@@ -59,6 +59,13 @@ document.addEventListener('DOMContentLoaded', function() {
             rarityText.style.color = data.color;
             rarityText.classList.add('roll-animation');
 
+            // Show secret button only on Uncommon roll
+            if (data.result === 'Uncommon') {
+                secretButton.classList.remove('d-none');
+            } else {
+                secretButton.classList.add('d-none');
+            }
+
             // Update stats
             rollCountDisplay.textContent = data.roll_count;
             luckBonusDisplay.textContent = data.luck_bonus + 'x';
