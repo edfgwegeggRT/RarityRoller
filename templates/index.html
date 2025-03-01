@@ -76,7 +76,7 @@
                 <!-- Inventory Section -->
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h3>Inventory (<span id="inventory-count">{{ inventory|length }}</span>/20)</h3>
+                        <h3>Inventory (<span id="inventory-count">{{ inventory|length }}</span>/<span id="inventory-capacity">{{ inventory_capacity }}</span>)</h3>
                         <button id="sell-all-button" class="btn btn-warning">Sell All</button>
                     </div>
                     <div class="card-body">
@@ -111,11 +111,19 @@
                                 Buy Max Luck
                             </button>
                         </div>
-                        <div class="shop-item">
+                        <div class="shop-item mb-3">
                             <h5>Luck Toggle</h5>
                             <p>Current status: <span id="luck-status" class="badge bg-success">ON</span></p>
                             <button id="toggle-luck-button" class="btn btn-outline-primary">
                                 Toggle Luck On/Off
+                            </button>
+                        </div>
+                        <div class="shop-item">
+                            <h5>Upgrade Storage (+1 slot)</h5>
+                            <p>Current capacity: <span id="displayed-capacity">{{ inventory_capacity }}</span> slots</p>
+                            <p>Cost: <span id="storage-cost">{{ 100 * (3 ** inventory_upgrade) }}</span> <i class="fas fa-coins text-warning"></i></p>
+                            <button id="buy-storage-button" class="btn btn-outline-warning">
+                                Buy Storage Slot
                             </button>
                         </div>
                     </div>

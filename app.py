@@ -35,6 +35,8 @@ def index():
             session['coins'] = 0
         if 'purchased_luck' not in session:
             session['purchased_luck'] = 0
+        if 'inventory_upgrade' not in session:
+            session['inventory_upgrade'] = 0
 
         return render_template('index.html', 
                              rarity_tiers=RARITY_TIERS, 
@@ -43,7 +45,9 @@ def index():
                              can_auto_roll=session['roll_count'] >= 50,
                              inventory=session['inventory'],
                              coins=session['coins'],
-                             purchased_luck=session['purchased_luck'])
+                             purchased_luck=session['purchased_luck'],
+                             inventory_capacity=20 + session.get('inventory_upgrade', 0),
+                             inventory_upgrade=session.get('inventory_upgrade', 0))
     except Exception as e:
         logger.error(f"Error rendering index: {e}")
         return "An error occurred", 500
@@ -163,6 +167,30 @@ def toggle_luck():
         logger.error(f"Error toggling luck: {e}")
         return jsonify({"error": "Failed to toggle luck"}), 500
 
+@app.route('/buy-storage')
+def buy_storage():
+    try:
+        # Calculate the cost based on current storage level
+        # Level 1: 100, Level 2: 300, Level 3: 900, etc.
+        current_level = session.get('inventory_upgrade', 0)
+        cost = 100 * (3 ** current_level)
+        
+        if session['coins'] >= cost:
+            session['coins'] -= cost
+            session['inventory_upgrade'] += 1
+            session.modified = True
+            return jsonify({
+                "success": True,
+                "coins": session['coins'],
+                "inventory_upgrade": session['inventory_upgrade'],
+                "inventory_capacity": 20 + session['inventory_upgrade'],
+                "next_cost": 100 * (3 ** session['inventory_upgrade'])
+            })
+        return jsonify({"error": f"Not enough coins! Storage upgrade costs {cost} coins"}), 400
+    except Exception as e:
+        logger.error(f"Error buying storage: {e}")
+        return jsonify({"error": "Failed to buy storage"}), 500
+
 @app.route('/roll')
 def roll():
     try:
@@ -171,8 +199,9 @@ def roll():
         if 'inventory' not in session:
             session['inventory'] = []
 
-        # Check inventory size
-        if len(session['inventory']) >= 20:
+        # Check inventory size with upgraded capacity
+        inventory_capacity = 20 + session.get('inventory_upgrade', 0)
+        if len(session['inventory']) >= inventory_capacity:
             return jsonify({"error": "Inventory full! Sell items to make space."}), 400
 
         session['roll_count'] += 1
@@ -272,11 +301,12 @@ def reset_all():
         # Set luck to exactly 0
         session['purchased_luck'] = 0
         session['inventory'] = []
+        session['inventory_upgrade'] = 0
         session.modified = True
         logger.info(f"Reset stats - luck set to exactly 0")
         return jsonify({
             "success": True,
-            "message": "All stats reset to default values: coins=0, luck=0"
+            "message": "All stats reset to default values: coins=0, luck=0, inventory capacity=20"
         })
     except Exception as e:
         logger.error(f"Error resetting all stats: {e}")

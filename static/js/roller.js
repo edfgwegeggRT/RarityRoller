@@ -219,6 +219,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Storage upgrade functionality
+    const buyStorageButton = document.getElementById('buy-storage-button');
+    const inventoryCapacityDisplay = document.getElementById('inventory-capacity');
+    const displayedCapacitySpan = document.getElementById('displayed-capacity');
+    const storageCostDisplay = document.getElementById('storage-cost');
+    
+    buyStorageButton.addEventListener('click', async function() {
+        try {
+            const response = await fetch('/buy-storage');
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Update displays
+                coinCountDisplay.textContent = data.coins;
+                inventoryCapacityDisplay.textContent = data.inventory_capacity;
+                displayedCapacitySpan.textContent = data.inventory_capacity;
+                storageCostDisplay.textContent = data.next_cost;
+                
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Storage upgraded! New capacity: ${data.inventory_capacity} slots`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Failed to upgrade storage';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error buying storage:', error);
+        }
+    });
+
     async function performRoll() {
         // Disable button and show spinner
         rollButton.disabled = true;
