@@ -198,6 +198,26 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const response = await fetch('/toggle-luck');
             const data = await response.json();
+            
+            if (response.ok) {
+                // Update the luck display
+                luckBonusDisplay.textContent = data.total_luck + 'x';
+                luckStatusDisplay.textContent = data.luck_active ? 'ON' : 'OFF';
+                
+                // Show notification
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Luck ${data.luck_active ? 'activated' : 'deactivated'}! Current luck: ${data.total_luck}x`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                console.error('Failed to toggle luck:', data.error);
+            }
+        } catch (error) {
+            console.error('Error toggling luck:', error);
+        }
+            const response = await fetch('/toggle-luck');
+            const data = await response.json();
 
             if (response.ok) {
                 // Update displays
