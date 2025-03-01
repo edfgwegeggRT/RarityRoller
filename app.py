@@ -120,35 +120,6 @@ def roll():
         for rarity, info in RARITY_TIERS.items():
             if roll_number <= (100000 / info["chance"]) * luck:
                 result = rarity
-
-@app.route('/sell-all')
-def sell_all():
-    try:
-        if not session['inventory']:
-            return jsonify({"error": "No items in inventory"}), 400
-            
-        total_value = 0
-        for rarity in session['inventory']:
-            total_value += RARITY_TIERS[rarity]['value']
-            
-        # Calculate bonus coins: 1 coin for every 2 rarities
-        rarity_bonus = len(session['inventory']) // 2
-        total_value += rarity_bonus
-            
-        session['coins'] += total_value
-        session['inventory'] = []
-        session.modified = True
-        
-        return jsonify({
-            "success": True,
-            "coins": session['coins'],
-            "inventory": session['inventory'],
-            "value": total_value
-        })
-    except Exception as e:
-        logger.error(f"Error selling all items: {e}")
-        return jsonify({"error": "Failed to sell all items"}), 500
-
                 break
 
         # Add to inventory
@@ -170,6 +141,34 @@ def sell_all():
     except Exception as e:
         logger.error(f"Error during roll: {e}")
         return jsonify({"error": "An error occurred during roll"}), 500
+
+@app.route('/sell-all')
+def sell_all():
+    try:
+        if not session['inventory']:
+            return jsonify({"error": "No items in inventory"}), 400
+
+        total_value = 0
+        for rarity in session['inventory']:
+            total_value += RARITY_TIERS[rarity]['value']
+
+        # Calculate bonus coins: 1 coin for every 2 rarities
+        rarity_bonus = len(session['inventory']) // 2
+        total_value += rarity_bonus
+
+        session['coins'] += total_value
+        session['inventory'] = []
+        session.modified = True
+
+        return jsonify({
+            "success": True,
+            "coins": session['coins'],
+            "inventory": session['inventory'],
+            "value": total_value
+        })
+    except Exception as e:
+        logger.error(f"Error selling all items: {e}")
+        return jsonify({"error": "Failed to sell all items"}), 500
 
 @app.route('/activate-super-luck')
 def activate_super_luck():
