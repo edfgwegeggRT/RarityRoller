@@ -107,7 +107,7 @@ def roll():
             session['inventory'] = []
 
         # Check inventory size
-        if len(session['inventory']) >= 10:
+        if len(session['inventory']) >= 20:
             return jsonify({"error": "Inventory full! Sell items to make space."}), 400
 
         session['roll_count'] += 1
