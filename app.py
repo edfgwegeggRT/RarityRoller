@@ -50,16 +50,43 @@ def index():
 
 def calculate_luck(roll_count):
     base_luck = 1 + (roll_count // 100)  # Base luck from rolls
+    
+    # Check if luck is active, if not, use base luck of 1
+    if not session.get('luck_active', True):
+        base_luck = 1
+    
     purchased_luck = session.get('purchased_luck', 0)  # Luck from shop
+    
+    # Only apply purchased luck if it's active
+    applied_luck = base_luck
+    if session.get('luck_active', True):
+        applied_luck = base_luck + purchased_luck
 
     if session.get('super_luck_until'):
         # Check if super luck is still active
         if datetime.now() < datetime.fromisoformat(session['super_luck_until']):
-            return (base_luck + purchased_luck) * 100  # Apply 100x multiplier
+            return applied_luck * 100  # Apply 100x multiplier
         else:
             # Clear expired super luck
             session.pop('super_luck_until', None)
-    return base_luck + purchased_luck
+    return applied_luck
+
+@app.route('/toggle-luck')
+def toggle_luck():
+    try:
+        # Toggle luck state
+        current_state = session.get('luck_active', True)
+        session['luck_active'] = not current_state
+        session.modified = True
+        
+        return jsonify({
+            "success": True,
+            "luck_active": session['luck_active'],
+            "total_luck": calculate_luck(session['roll_count'])
+        })
+    except Exception as e:
+        logger.error(f"Error toggling luck: {e}")
+        return jsonify({"error": "Failed to toggle luck"}), 500
 
 @app.route('/sell/<rarity>')
 def sell_item(rarity):
@@ -83,17 +110,26 @@ def sell_item(rarity):
 @app.route('/buy-luck')
 def buy_luck():
     try:
-        if session['coins'] >= 50:
-            session['coins'] -= 50
+        # Calculate cost based on current luck level
+        # Level 1: 50, Level 2: 200, Level 3: 800, etc.
+        cost = 50 * (4 ** (session.get('purchased_luck', 0)))
+        
+        if session['coins'] >= cost:
+            session['coins'] -= cost
             session['purchased_luck'] += 1
+            # Initialize luck_active if it doesn't exist
+            if 'luck_active' not in session:
+                session['luck_active'] = True
             session.modified = True
             return jsonify({
                 "success": True,
                 "coins": session['coins'],
                 "purchased_luck": session['purchased_luck'],
+                "luck_cost": 50 * (4 ** session['purchased_luck']),  # Next level cost
+                "luck_active": session.get('luck_active', True),
                 "total_luck": calculate_luck(session['roll_count'])
             })
-        return jsonify({"error": "Not enough coins"}), 400
+        return jsonify({"error": f"Not enough coins! You need {cost} coins."}), 400
     except Exception as e:
         logger.error(f"Error buying luck: {e}")
         return jsonify({"error": "Failed to buy luck"}), 500
@@ -206,12 +242,14 @@ def reset_all():
         session['coins'] = 0
         # Set luck to exactly 0
         session['purchased_luck'] = 0
+        # Set luck to active by default
+        session['luck_active'] = True
         session['inventory'] = []
         session.modified = True
-        logger.info(f"Reset stats - luck set to exactly 0")
+        logger.info(f"Reset stats - luck set to exactly 0 and active")
         return jsonify({
             "success": True,
-            "message": "All stats reset to default values: coins=0, luck=0"
+            "message": "All stats reset to default values: coins=0, luck=0, luck active=true"
         })
     except Exception as e:
         logger.error(f"Error resetting all stats: {e}")
