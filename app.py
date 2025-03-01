@@ -199,6 +199,22 @@ def reset_cookies():
         logger.error(f"Error resetting cookies: {e}")
         return jsonify({"error": "Failed to reset cookies"}), 500
 
+@app.route('/reset-all')
+def reset_all():
+    try:
+        # Reset the player's stats
+        session['coins'] = 0
+        session['purchased_luck'] = 1
+        session['inventory'] = []
+        session.modified = True
+        return jsonify({
+            "success": True,
+            "message": "All stats reset to default values"
+        })
+    except Exception as e:
+        logger.error(f"Error resetting all stats: {e}")
+        return jsonify({"error": "Failed to reset all stats"}), 500
+
 if __name__ == '__main__':
     logger.info(f"Starting server on port 5000")
     app.run(host='0.0.0.0', port=5000, debug=True)
