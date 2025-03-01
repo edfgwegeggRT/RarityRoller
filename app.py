@@ -204,14 +204,14 @@ def reset_all():
     try:
         # Reset the player's stats to exact values
         session['coins'] = 0
-        # Always set to exactly 1, not 2 or 5
-        session['purchased_luck'] = 1
+        # Set luck to exactly 0
+        session['purchased_luck'] = 0
         session['inventory'] = []
         session.modified = True
-        logger.info(f"Reset stats - luck set to exactly 1")
+        logger.info(f"Reset stats - luck set to exactly 0")
         return jsonify({
             "success": True,
-            "message": "All stats reset to default values: coins=0, luck=1"
+            "message": "All stats reset to default values: coins=0, luck=0"
         })
     except Exception as e:
         logger.error(f"Error resetting all stats: {e}")
