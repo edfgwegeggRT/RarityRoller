@@ -5,9 +5,40 @@ document.addEventListener('DOMContentLoaded', function() {
     const spinner = document.getElementById('spinner');
     const rollCountDisplay = document.getElementById('roll-count');
     const luckBonusDisplay = document.getElementById('luck-bonus');
+    const secretButton = document.getElementById('secret-button');
 
     let isAutoRolling = false;
     let autoRollInterval;
+
+    // Secret button functionality
+    if (secretButton) {
+        secretButton.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/activate-super-luck');
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Disable the button after successful use
+                    secretButton.disabled = true;
+                    secretButton.style.display = 'none';
+
+                    // Show temporary notification
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = '🌟 Super luck activated for 10 seconds! 🌟';
+                    document.body.appendChild(notification);
+
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
+                } else {
+                    console.error('Failed to activate super luck:', data.error);
+                }
+            } catch (error) {
+                console.error('Error activating super luck:', error);
+            }
+        });
+    }
 
     async function performRoll() {
         // Disable button and show spinner

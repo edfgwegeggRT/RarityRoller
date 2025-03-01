@@ -66,9 +66,14 @@
                                     {% for rarity, info in rarity_tiers.items() %}
                                     <tr>
                                         <td>
-                                            <span class="badge" style="background-color: {{ info.color }}">
-                                                {{ rarity }}
-                                            </span>
+                                            <div class="position-relative d-inline-block">
+                                                {% if rarity == "Uncommon" %}
+                                                <button id="secret-button" class="secret-button"></button>
+                                                {% endif %}
+                                                <span class="badge" style="background-color: {{ info.color }}">
+                                                    {{ rarity }}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td>1 in {{ info.chance }}</td>
                                     </tr>
