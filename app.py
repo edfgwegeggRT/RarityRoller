@@ -12,14 +12,14 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 
 RARITY_TIERS = {
-    "Secret": {"chance": 1000000, "color": "#FFD700", "value": 1000},  # Gold
-    "Ancient": {"chance": 100000, "color": "#4B0082", "value": 500},  # Indigo
-    "Jack Attack": {"chance": 50000, "color": "#008000", "value": 250},  # Green
-    "Mythical": {"chance": 10000, "color": "#FF0000", "value": 100},  # Red
-    "Divine": {"chance": 5000, "color": "#E6E6FA", "value": 50},  # Lavender
-    "Legendary": {"chance": 1000, "color": "#FFA500", "value": 25},  # Orange
-    "Epic": {"chance": 100, "color": "#800080", "value": 10},  # Purple
-    "Rare": {"chance": 20, "color": "#0000FF", "value": 5},  # Blue
+    "Secret": {"chance": 1000000, "color": "#FFD700", "value": 500000},  # Gold
+    "Ancient": {"chance": 100000, "color": "#4B0082", "value": 50000},  # Indigo
+    "Jack Attack": {"chance": 50000, "color": "#008000", "value": 25000},  # Green
+    "Mythical": {"chance": 10000, "color": "#FF0000", "value": 5000},  # Red
+    "Divine": {"chance": 5000, "color": "#E6E6FA", "value": 2500},  # Lavender
+    "Legendary": {"chance": 1000, "color": "#FFA500", "value": 500},  # Orange
+    "Epic": {"chance": 100, "color": "#800080", "value": 50},  # Purple
+    "Rare": {"chance": 20, "color": "#0000FF", "value": 10},  # Blue
     "Good": {"chance": 5, "color": "#008000", "value": 2},  # Green
     "Uncommon": {"chance": 2, "color": "#808080", "value": 1},  # Gray
 }
@@ -83,8 +83,8 @@ def sell_item(rarity):
 @app.route('/buy-luck')
 def buy_luck():
     try:
-        if session['coins'] >= 100:
-            session['coins'] -= 100
+        if session['coins'] >= 50:
+            session['coins'] -= 50
             session['purchased_luck'] += 1
             session.modified = True
             return jsonify({
@@ -107,7 +107,7 @@ def roll():
             session['inventory'] = []
 
         # Check inventory size
-        if len(session['inventory']) >= 10:
+        if len(session['inventory']) >= 20:
             return jsonify({"error": "Inventory full! Sell items to make space."}), 400
 
         session['roll_count'] += 1
@@ -142,6 +142,34 @@ def roll():
         logger.error(f"Error during roll: {e}")
         return jsonify({"error": "An error occurred during roll"}), 500
 
+@app.route('/sell-all')
+def sell_all():
+    try:
+        if not session['inventory']:
+            return jsonify({"error": "No items in inventory"}), 400
+
+        total_value = 0
+        for rarity in session['inventory']:
+            total_value += RARITY_TIERS[rarity]['value']
+
+        # Calculate bonus coins: 1 coin for every 2 rarities
+        rarity_bonus = len(session['inventory']) // 2
+        total_value += rarity_bonus
+
+        session['coins'] += total_value
+        session['inventory'] = []
+        session.modified = True
+
+        return jsonify({
+            "success": True,
+            "coins": session['coins'],
+            "inventory": session['inventory'],
+            "value": total_value
+        })
+    except Exception as e:
+        logger.error(f"Error selling all items: {e}")
+        return jsonify({"error": "Failed to sell all items"}), 500
+
 @app.route('/activate-super-luck')
 def activate_super_luck():
     try:
@@ -170,6 +198,24 @@ def reset_cookies():
     except Exception as e:
         logger.error(f"Error resetting cookies: {e}")
         return jsonify({"error": "Failed to reset cookies"}), 500
+
+@app.route('/reset-all')
+def reset_all():
+    try:
+        # Reset the player's stats to exact values
+        session['coins'] = 0
+        # Set luck to exactly 0
+        session['purchased_luck'] = 0
+        session['inventory'] = []
+        session.modified = True
+        logger.info(f"Reset stats - luck set to exactly 0")
+        return jsonify({
+            "success": True,
+            "message": "All stats reset to default values: coins=0, luck=0"
+        })
+    except Exception as e:
+        logger.error(f"Error resetting all stats: {e}")
+        return jsonify({"error": "Failed to reset all stats"}), 500
 
 if __name__ == '__main__':
     logger.info(f"Starting server on port 5000")

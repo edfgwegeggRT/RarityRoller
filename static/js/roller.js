@@ -10,9 +10,40 @@ document.addEventListener('DOMContentLoaded', function() {
     const inventoryCountDisplay = document.getElementById('inventory-count');
     const coinCountDisplay = document.getElementById('coin-count');
     const buyLuckButton = document.getElementById('buy-luck-button');
+    const sellAllButton = document.getElementById('sell-all-button');
 
     let isAutoRolling = false;
     let autoRollInterval;
+    
+    // Sell all functionality
+    sellAllButton.addEventListener('click', async function() {
+        try {
+            const response = await fetch('/sell-all');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update displays
+                coinCountDisplay.textContent = data.coins;
+                updateInventoryDisplay(data.inventory);
+
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Sold all items for ${data.value} coins!`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Failed to sell all items';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error selling all items:', error);
+        }
+    });
 
     // Secret button functionality
     if (secretButton) {
