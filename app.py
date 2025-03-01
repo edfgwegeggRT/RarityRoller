@@ -37,6 +37,8 @@ def index():
             session['purchased_luck'] = 0
         if 'inventory_upgrade' not in session:
             session['inventory_upgrade'] = 0
+        if 'auto_sell_settings' not in session:
+            session['auto_sell_settings'] = {rarity: False for rarity in RARITY_TIERS}
 
         return render_template('index.html', 
                              rarity_tiers=RARITY_TIERS, 
@@ -47,7 +49,8 @@ def index():
                              coins=session['coins'],
                              purchased_luck=session['purchased_luck'],
                              inventory_capacity=20 + session.get('inventory_upgrade', 0),
-                             inventory_upgrade=session.get('inventory_upgrade', 0))
+                             inventory_upgrade=session.get('inventory_upgrade', 0),
+                             auto_sell_settings=session.get('auto_sell_settings', {}))
     except Exception as e:
         logger.error(f"Error rendering index: {e}")
         return "An error occurred", 500
@@ -191,6 +194,29 @@ def buy_storage():
         logger.error(f"Error buying storage: {e}")
         return jsonify({"error": "Failed to buy storage"}), 500
 
+@app.route('/toggle-auto-sell/<rarity>')
+def toggle_auto_sell(rarity):
+    try:
+        if rarity not in RARITY_TIERS:
+            return jsonify({"error": "Invalid rarity"}), 400
+            
+        # Initialize auto_sell_settings if it doesn't exist
+        if 'auto_sell_settings' not in session:
+            session['auto_sell_settings'] = {r: False for r in RARITY_TIERS}
+        
+        # Toggle the setting for this rarity
+        session['auto_sell_settings'][rarity] = not session['auto_sell_settings'].get(rarity, False)
+        session.modified = True
+        
+        return jsonify({
+            "success": True,
+            "rarity": rarity,
+            "auto_sell_enabled": session['auto_sell_settings'][rarity]
+        })
+    except Exception as e:
+        logger.error(f"Error toggling auto-sell for {rarity}: {e}")
+        return jsonify({"error": f"Failed to toggle auto-sell for {rarity}"}), 500
+
 @app.route('/roll')
 def roll():
     try:
@@ -198,6 +224,8 @@ def roll():
             session['roll_count'] = 0
         if 'inventory' not in session:
             session['inventory'] = []
+        if 'auto_sell_settings' not in session:
+            session['auto_sell_settings'] = {rarity: False for rarity in RARITY_TIERS}
 
         # Check inventory size with upgraded capacity
         inventory_capacity = 20 + session.get('inventory_upgrade', 0)
@@ -216,8 +244,17 @@ def roll():
                 result = rarity
                 break
 
-        # Add to inventory
-        session['inventory'].append(result)
+        # Check if this rarity should be auto-sold
+        auto_sold = False
+        auto_sell_value = 0
+        if session['auto_sell_settings'].get(result, False):
+            auto_sold = True
+            auto_sell_value = RARITY_TIERS[result]['value']
+            session['coins'] += auto_sell_value
+        else:
+            # Add to inventory only if not auto-sold
+            session['inventory'].append(result)
+            
         session.modified = True
 
         response = {
@@ -228,7 +265,9 @@ def roll():
             "luck_bonus": luck,
             "can_auto_roll": session['roll_count'] >= 50,
             "inventory": session['inventory'],
-            "coins": session['coins']
+            "coins": session['coins'],
+            "auto_sold": auto_sold,
+            "auto_sell_value": auto_sell_value
         }
         logger.debug(f"Roll result: {response}")
         return jsonify(response)
