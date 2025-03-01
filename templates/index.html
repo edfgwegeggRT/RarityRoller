@@ -13,18 +13,39 @@
         <div class="row justify-content-center">
             <div class="col-md-8 text-center">
                 <h1 class="mb-4">Rarity Roller</h1>
-                
+
                 <div class="card mb-4">
                     <div class="card-body">
+                        <div id="stats" class="mb-3">
+                            <div class="row">
+                                <div class="col">
+                                    <h5>Rolls: <span id="roll-count">{{ roll_count }}</span></h5>
+                                </div>
+                                <div class="col">
+                                    <h5>Luck Bonus: <span id="luck-bonus">{{ luck_bonus }}x</span></h5>
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="result-display" class="mb-4">
                             <h2 class="display-4" id="rarity-text">Roll to Begin!</h2>
                             <div class="spinner-border d-none" id="spinner" role="status">
                                 <span class="visually-hidden">Rolling...</span>
                             </div>
                         </div>
-                        <button id="roll-button" class="btn btn-primary btn-lg">
-                            <i class="fas fa-dice me-2"></i>Roll!
-                        </button>
+
+                        <div class="d-grid gap-2">
+                            <button id="roll-button" class="btn btn-primary btn-lg">
+                                <i class="fas fa-dice me-2"></i>Roll!
+                            </button>
+                            <button id="auto-roll-button" class="btn btn-secondary btn-lg {% if not can_auto_roll %}disabled{% endif %}" 
+                                    {% if not can_auto_roll %}disabled{% endif %}>
+                                <i class="fas fa-sync-alt me-2"></i>Auto Roll
+                                {% if not can_auto_roll %}
+                                    <small>(Unlocks at 50 rolls)</small>
+                                {% endif %}
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -38,7 +59,7 @@
                                 <thead>
                                     <tr>
                                         <th>Rarity</th>
-                                        <th>Chance</th>
+                                        <th>Base Chance</th>
                                     </tr>
                                 </thead>
                                 <tbody>
