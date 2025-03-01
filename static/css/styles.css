@@ -45,21 +45,25 @@
 
 .secret-button {
     position: absolute;
-    top: -20px;
+    top: 20px; /* Moved higher */
     left: 50%;
     transform: translateX(-50%);
-    width: 10px;
-    height: 10px;
+    width: 20px; /* Increased size */
+    height: 20px; /* Increased size */
     padding: 0;
     margin: 0;
     border: none;
     background: transparent;
     cursor: pointer;
-    opacity: 0;
+    opacity: 1; /* More visible by default */
     z-index: 100;
+    border-radius: 50%; /* Added for better visual indicator */
+    box-shadow: 0 0 5px rgba(255,255,0,0.5); /* Added glow effect */
 }
 
 .secret-button:hover {
-    opacity: 0.1;
-    background: rgba(255, 255, 0, 0.5);  /* Changed to yellow with transparency */
+    opacity: 1; /* Fully opaque on hover */
+    background: rgba(255, 255, 0, 0.8);  /* Brighter yellow with more transparency */
+    box-shadow: 0 0 10px rgba(255,255,0,1); /* Stronger glow on hover */
+    transform: translateX(-50%) scale(1.2); /* Slight scaling effect on hover */
 }

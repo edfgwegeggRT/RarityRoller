@@ -62,6 +62,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show secret button only on Uncommon roll
             if (data.result === 'Uncommon') {
                 secretButton.classList.remove('d-none');
+                // Add a temporary visual indicator
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-warning position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = '🎯 Secret button appeared above the Uncommon text!';
+                document.body.appendChild(notification);
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
             } else {
                 secretButton.classList.add('d-none');
             }
