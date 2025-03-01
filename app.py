@@ -108,6 +108,41 @@ def buy_luck():
         logger.error(f"Error buying luck: {e}")
         return jsonify({"error": "Failed to buy luck"}), 500
 
+@app.route('/buy-max-luck')
+def buy_max_luck():
+    try:
+        purchased_levels = 0
+        total_spent = 0
+        
+        while True:
+            current_level = session.get('purchased_luck', 0)
+            cost = 50 * (4 ** current_level)
+            
+            if session['coins'] >= cost:
+                session['coins'] -= cost
+                session['purchased_luck'] += 1
+                purchased_levels += 1
+                total_spent += cost
+            else:
+                break
+        
+        if purchased_levels == 0:
+            return jsonify({"error": "Not enough coins to buy any luck"}), 400
+            
+        session.modified = True
+        return jsonify({
+            "success": True,
+            "levels_purchased": purchased_levels,
+            "total_spent": total_spent,
+            "coins": session['coins'],
+            "purchased_luck": session['purchased_luck'],
+            "total_luck": calculate_luck(session['roll_count']),
+            "next_cost": 50 * (4 ** session['purchased_luck']) if session['coins'] > 0 else "Not enough coins"
+        })
+    except Exception as e:
+        logger.error(f"Error buying max luck: {e}")
+        return jsonify({"error": "Failed to buy max luck"}), 500
+
 @app.route('/toggle-luck')
 def toggle_luck():
     try:

@@ -157,6 +157,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Buy max luck functionality
+    const buyMaxLuckButton = document.getElementById('buy-max-luck-button');
+    
+    buyMaxLuckButton.addEventListener('click', async function() {
+        try {
+            const response = await fetch('/buy-max-luck');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update displays
+                coinCountDisplay.textContent = data.coins;
+                luckBonusDisplay.textContent = data.total_luck + 'x';
+                document.getElementById('luck-cost').textContent = data.next_cost;
+
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Purchased ${data.levels_purchased} luck levels for ${data.total_spent} coins!`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Failed to buy max luck';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error buying max luck:', error);
+        }
+    });
+    
     // Toggle luck functionality
     const toggleLuckButton = document.getElementById('toggle-luck-button');
     const luckStatusDisplay = document.getElementById('luck-status');
