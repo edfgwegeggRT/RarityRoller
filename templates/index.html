@@ -14,19 +14,26 @@
             <div class="col-md-8 text-center">
                 <h1 class="mb-4">Rarity Roller</h1>
 
+                <!-- Stats Section -->
                 <div class="card mb-4">
                     <div class="card-body">
-                        <div id="stats" class="mb-3">
-                            <div class="row">
-                                <div class="col">
-                                    <h5>Rolls: <span id="roll-count">{{ roll_count }}</span></h5>
-                                </div>
-                                <div class="col">
-                                    <h5>Luck Bonus: <span id="luck-bonus">{{ luck_bonus }}x</span></h5>
-                                </div>
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h5><i class="fas fa-coins text-warning"></i> Coins: <span id="coin-count">{{ coins }}</span></h5>
+                            </div>
+                            <div class="col">
+                                <h5><i class="fas fa-dice"></i> Rolls: <span id="roll-count">{{ roll_count }}</span></h5>
+                            </div>
+                            <div class="col">
+                                <h5><i class="fas fa-star"></i> Luck: <span id="luck-bonus">{{ luck_bonus }}x</span></h5>
                             </div>
                         </div>
+                    </div>
+                </div>
 
+                <!-- Main Game Section -->
+                <div class="card mb-4">
+                    <div class="card-body">
                         <div id="result-display" class="mb-4">
                             <div class="position-relative">
                                 <button id="secret-button" class="secret-button d-none"></button>
@@ -52,6 +59,44 @@
                     </div>
                 </div>
 
+                <!-- Inventory Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Inventory (<span id="inventory-count">{{ inventory|length }}</span>/10)</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="inventory-items" class="d-flex flex-wrap gap-2 justify-content-center">
+                            {% for item in inventory %}
+                            <div class="inventory-item" data-rarity="{{ item }}">
+                                <span class="badge" style="background-color: {{ rarity_tiers[item]['color'] }}">
+                                    {{ item }}
+                                </span>
+                                <button class="btn btn-sm btn-outline-warning sell-button" data-rarity="{{ item }}" data-value="{{ rarity_tiers[item]['value'] }}">
+                                    Sell ({{ rarity_tiers[item]['value'] }} <i class="fas fa-coins"></i>)
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shop Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Luck Shop</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="shop-item mb-3">
+                            <h5>Purchase Luck (+1x)</h5>
+                            <p>Cost: 100 <i class="fas fa-coins text-warning"></i></p>
+                            <button id="buy-luck-button" class="btn btn-outline-warning">
+                                Buy Luck Boost
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rarity Tiers Section -->
                 <div class="card">
                     <div class="card-header">
                         <h3>Rarity Tiers</h3>
@@ -63,6 +108,7 @@
                                     <tr>
                                         <th>Rarity</th>
                                         <th>Base Chance</th>
+                                        <th>Value</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -74,6 +120,7 @@
                                             </span>
                                         </td>
                                         <td>1 in {{ info.chance }}</td>
+                                        <td>{{ info.value }} <i class="fas fa-coins text-warning"></i></td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
