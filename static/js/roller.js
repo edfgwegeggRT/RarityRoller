@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
         mythicalButton.addEventListener('click', function() {
             // Hide the button after click
             this.classList.add('d-none');
-            
+
             // Call the API to activate mythical luck
             fetch('/activate-mythical-luck')
                 .then(response => response.json())
@@ -31,10 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         });
     }
-});
-
-
-document.addEventListener('DOMContentLoaded', function() {
     const rollButton = document.getElementById('roll-button');
     const autoRollButton = document.getElementById('auto-roll-button');
     const rarityText = document.getElementById('rarity-text');
