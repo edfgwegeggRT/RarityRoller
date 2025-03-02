@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Remove supernova after animation
                     setTimeout(() => {
                         supernova.remove();
-                    }, 1000);
+                    }, 2000); // Increased to 2 seconds to match CSS animation
 
                     // Add mythic animation to the text
                     rarityText.classList.add('mythic-animation');
