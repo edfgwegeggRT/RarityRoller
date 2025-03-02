@@ -9,8 +9,13 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-# Generate a secure random secret key
-app.secret_key = os.urandom(24)
+# Ensure secret key is set from environment variable
+secret_key = os.environ.get("SESSION_SECRET")
+if not secret_key:
+    logger.warning("SESSION_SECRET not found in environment, using default key")
+    secret_key = "default_secret_key"
+app.secret_key = secret_key
+logger.info("Flask app configured with secret key")
 
 RARITY_TIERS = {
     "LEBRON": {"chance": 50000000, "color": "#800080", "value": 10000000},  # Purple color, highest value
