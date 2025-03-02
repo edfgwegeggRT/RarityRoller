@@ -86,10 +86,7 @@
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h3>Inventory (<span id="inventory-count">{{ inventory|length }}</span>/<span id="inventory-capacity">{{ inventory_capacity }}</span>)</h3>
-                        <div>
-                            <button id="unequip-button" class="btn btn-secondary me-2 {% if not equipped_rarity %}d-none{% endif %}">Unequip</button>
-                            <button id="sell-all-button" class="btn btn-warning">Sell All</button>
-                        </div>
+                        <button id="sell-all-button" class="btn btn-warning">Sell All</button>
                     </div>
                     <div class="card-body">
                         <div id="inventory-items" class="d-flex flex-wrap gap-2 justify-content-center">
@@ -97,26 +94,15 @@
                             <div class="inventory-item" data-rarity="{{ item }}">
                                 <span class="badge" style="background-color: {{ rarity_tiers[item]['color'] }}">
                                     {{ item }}
-                                    {% if equipped_rarity and equipped_rarity == item %}
-                                    <span class="equipped-indicator">✓</span>
-                                    {% endif %}
                                 </span>
-                                <div class="d-flex gap-1">
-                                    <button class="btn btn-sm btn-outline-primary equip-button" data-rarity="{{ item }}" {% if equipped_rarity and equipped_rarity == item %}disabled{% endif %}>
-                                        {% if equipped_rarity and equipped_rarity == item %}Equipped{% else %}Equip{% endif %}
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-warning sell-button" data-rarity="{{ item }}" data-value="{{ rarity_tiers[item]['value'] }}" {% if equipped_rarity and equipped_rarity == item %}disabled{% endif %}>
-                                        Sell ({{ rarity_tiers[item]['value'] }} <i class="fas fa-coins"></i>)
-                                    </button>
-                                </div>
+                                <button class="btn btn-sm btn-outline-warning sell-button" data-rarity="{{ item }}" data-value="{{ rarity_tiers[item]['value'] }}">
+                                    Sell ({{ rarity_tiers[item]['value'] }} <i class="fas fa-coins"></i>)
+                                </button>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
-                
-                <!-- Equipped animations container -->
-                <div id="equipped-animation-container"></div>
 
                 <!-- Shop Section -->
                 <div class="card mb-4">
