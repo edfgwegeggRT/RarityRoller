@@ -195,6 +195,191 @@
         height: 250vmax;
     }
     100% {
+        width: 300vmax;
+        height: 300vmax;
+        opacity: 0;
+    }
+}
+
+@keyframes supernova-pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.95);
+        opacity: 0.8;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.05);
+        opacity: 0.9;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(0.95);
+        opacity: 0.8;
+    }
+}
+/* Hyperpigmentation animation */
+@keyframes hyperpigmentation-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    opacity: 0.7;
+    filter: blur(5px) brightness(1.2);
+  }
+  25% {
+    transform: translate(-50%, -50%) scale(1.5) rotate(90deg);
+    opacity: 0.9;
+    filter: blur(0px) brightness(1.5);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1) rotate(180deg);
+    opacity: 0.7;
+    filter: blur(8px) brightness(1.2);
+  }
+  75% {
+    transform: translate(-50%, -50%) scale(1.8) rotate(270deg);
+    opacity: 0.9;
+    filter: blur(0px) brightness(1.5);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotate(360deg);
+    opacity: 0.7;
+    filter: blur(5px) brightness(1.2);
+  }
+}
+
+.hyperpigmentation-effect {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  pointer-events: none;
+  z-index: 1001;  /* Higher than other effects */
+  animation: hyperpigmentation-pulse 3s infinite;
+}
+
+.hyperpigmentation-inner {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, #D2B48C 0%, #A0522D 50%, transparent 80%);
+  border-radius: 50%;
+  box-shadow: 0 0 50px 30px #D2B48C;
+}
+
+.hyperpigmentation-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hyperpigmentation-particle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: #D2B48C;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+/* Star animation for high rarity items */
+@keyframes rotate-star {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+    opacity: 0.3;
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes color-shift {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+@keyframes snowflake-spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(180deg) scale(1.1);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) scale(1);
+  }
+}
+
+.star-effect {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  pointer-events: none;
+  z-index: 1000;
+  animation: rotate-star 2s linear infinite;
+}
+
+.star-inner {
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.hax-effect {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 250px;
+  height: 250px;
+  pointer-events: none;
+  z-index: 1000;
+  animation: pulse-glow 1.5s ease-in-out infinite, color-shift 3s linear infinite;
+}
+
+.hax-inner {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, #006400, #00FF00);
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+}
+
+.special-effect {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 220px;
+  height: 220px;
+  pointer-events: none;
+  z-index: 1000;
+  animation: snowflake-spin 2.5s ease-in-out infinite;
+}
+
+.special-inner {
+  width: 100%;
+  height: 100%;
+  background-color: #87CEEB;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%, 50% 0%, 50% 100%, 0% 50%, 100% 50%);
+}
 
 /* Equipped rarity animations */
 .equipped-indicator {
@@ -330,13 +515,35 @@
 
 /* Special body effect for top tier rarities */
 .special-effect-body {
-    animation: body-pulse 2s infinite;
+    overflow: hidden;
+    position: relative;
+    --effect-color: gold;
 }
 
-@keyframes body-pulse {
-    0% { box-shadow: inset 0 0 50px rgba(0,0,0,0); }
-    50% { box-shadow: inset 0 0 50px var(--effect-color, rgba(255,255,255,0.1)); }
-    100% { box-shadow: inset 0 0 50px rgba(0,0,0,0); }
+.special-effect-body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at center, var(--effect-color) 0%, transparent 70%);
+    opacity: 0.2;
+    z-index: 1000;
+    animation: pulse 2s infinite alternate;
+}
+
+.rarity-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    background-color: var(--rarity-color);
+    opacity: 0.5;
+    z-index: 999;
 }
 
 /* Color shift animation for special effects */
@@ -580,190 +787,4 @@
         transform: rotate(360deg) translateX(230px) rotate(-360deg) scale(1);
         filter: hue-rotate(360deg);
     }
-}
-
-        width: 300vmax;
-        height: 300vmax;
-        opacity: 0;
-    }
-}
-
-@keyframes supernova-pulse {
-    0% {
-        transform: translate(-50%, -50%) scale(0.95);
-        opacity: 0.8;
-    }
-    50% {
-        transform: translate(-50%, -50%) scale(1.05);
-        opacity: 0.9;
-    }
-    100% {
-        transform: translate(-50%, -50%) scale(0.95);
-        opacity: 0.8;
-    }
-}
-/* Hyperpigmentation animation */
-@keyframes hyperpigmentation-pulse {
-  0% {
-    transform: translate(-50%, -50%) scale(1) rotate(0deg);
-    opacity: 0.7;
-    filter: blur(5px) brightness(1.2);
-  }
-  25% {
-    transform: translate(-50%, -50%) scale(1.5) rotate(90deg);
-    opacity: 0.9;
-    filter: blur(0px) brightness(1.5);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1) rotate(180deg);
-    opacity: 0.7;
-    filter: blur(8px) brightness(1.2);
-  }
-  75% {
-    transform: translate(-50%, -50%) scale(1.8) rotate(270deg);
-    opacity: 0.9;
-    filter: blur(0px) brightness(1.5);
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1) rotate(360deg);
-    opacity: 0.7;
-    filter: blur(5px) brightness(1.2);
-  }
-}
-
-.hyperpigmentation-effect {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 300px;
-  height: 300px;
-  pointer-events: none;
-  z-index: 1001;  /* Higher than other effects */
-  animation: hyperpigmentation-pulse 3s infinite;
-}
-
-.hyperpigmentation-inner {
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle, #D2B48C 0%, #A0522D 50%, transparent 80%);
-  border-radius: 50%;
-  box-shadow: 0 0 50px 30px #D2B48C;
-}
-
-.hyperpigmentation-particles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.hyperpigmentation-particle {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  background-color: #D2B48C;
-  border-radius: 50%;
-  opacity: 0.8;
-}
-
-/* Star animation for high rarity items */
-@keyframes rotate-star {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(360deg);
-    opacity: 0.3;
-  }
-}
-
-@keyframes pulse-glow {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.9;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.2);
-    opacity: 0.5;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.9;
-  }
-}
-
-@keyframes color-shift {
-  0% {
-    filter: hue-rotate(0deg);
-  }
-  100% {
-    filter: hue-rotate(360deg);
-  }
-}
-
-@keyframes snowflake-spin {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg) scale(1);
-  }
-  50% {
-    transform: translate(-50%, -50%) rotate(180deg) scale(1.1);
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(360deg) scale(1);
-  }
-}
-
-.star-effect {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 200px;
-  height: 200px;
-  pointer-events: none;
-  z-index: 1000;
-  animation: rotate-star 2s linear infinite;
-}
-
-.star-inner {
-  width: 100%;
-  height: 100%;
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-}
-
-.hax-effect {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 250px;
-  height: 250px;
-  pointer-events: none;
-  z-index: 1000;
-  animation: pulse-glow 1.5s ease-in-out infinite, color-shift 3s linear infinite;
-}
-
-.hax-inner {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to right, #006400, #00FF00);
-  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
-}
-
-.special-effect {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 220px;
-  height: 220px;
-  pointer-events: none;
-  z-index: 1000;
-  animation: snowflake-spin 2.5s ease-in-out infinite;
-}
-
-.special-inner {
-  width: 100%;
-  height: 100%;
-  background-color: #87CEEB;
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%, 50% 0%, 50% 100%, 0% 50%, 100% 50%);
 }

@@ -1003,6 +1003,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const rarityColor = rarityColors[rarity];
 
+        // Add color overlay to the entire screen
+        const overlay = document.createElement('div');
+        overlay.className = 'rarity-overlay';
+        overlay.id = 'rarity-overlay';
+        overlay.style.setProperty('--rarity-color', rarityColor);
+        document.body.appendChild(overlay);
+
         // Create animation element
         const animation = document.createElement('div');
         animation.className = `${rarity.toLowerCase().replace(/\s+/g, '-')}-equipped-animation equipped-animation`;
@@ -1074,6 +1081,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (animation) {
             animation.remove();
         }
+        
+        // Remove screen color overlay
+        const overlay = document.getElementById('rarity-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
+        
         document.body.classList.remove('special-effect-body');
     }
 
