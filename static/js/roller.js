@@ -310,17 +310,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (response.ok) {
-                // Update roll count and luck bonus
+                // Update displays 
                 rollCountDisplay.textContent = data.roll_count;
                 luckBonusDisplay.textContent = data.luck_bonus + 'x';
-
-                // Enable auto-roll if roll count is high enough
-                if (data.can_auto_roll && autoRollButton.classList.contains('disabled')) {
-                    autoRollButton.classList.remove('disabled');
-                    autoRollButton.disabled = false;
-                }
-
-                // Update the inventory display
                 updateInventoryDisplay(data.inventory);
                 coinCountDisplay.textContent = data.coins;
 
@@ -333,15 +325,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Check for high-rarity rolls and apply special effects
                 const highRarities = ['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret'];
                 if (highRarities.includes(data.result)) {
-                    // Create and append flash effect
-                    const flash = document.createElement('div');
-                    flash.className = 'screen-flash';
-                    document.body.appendChild(flash);
+                    // Create supernova effect
+                    const supernova = document.createElement('div');
+                    supernova.className = 'supernova';
+                    supernova.style.background = `radial-gradient(circle, ${data.color}66 0%, ${data.color}33 50%, transparent 70%)`;
+                    document.body.appendChild(supernova);
 
-                    // Remove flash effect after animation
+                    // Remove supernova after animation
                     setTimeout(() => {
-                        flash.remove();
-                    }, 500);
+                        supernova.remove();
+                    }, 1000);
 
                     // Add mythic animation to the text
                     rarityText.classList.add('mythic-animation');
@@ -352,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 2000);
 
                     // Play celebration sound
-                    const audio = new Audio('data:audio/wav;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAAGhgBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVWqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr///////////////////////////////////////////8AAAA5TEFNRTMuMTAwA8MAAAAAAAAAABQgJAi4TQABzAAAAob6xLBzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//sQxAADwAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==');
+                    const audio = new Audio('data:audio/wav;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAAGhgBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVWqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr///////////////////////////////////////////8AAAA5TEFNRTMuMTAwA8MAAAAAAAAAABQgJAi4TQABzAAAAob6xLBzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//sQxAADwAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==');
                     audio.play();
                 }
 
@@ -384,7 +377,6 @@ document.addEventListener('DOMContentLoaded', function() {
             spinner.classList.add('d-none');
             stopAutoRoll();
 
-            // Show error notification
             const notification = document.createElement('div');
             notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
             notification.textContent = error.message || 'Error occurred while rolling!';
