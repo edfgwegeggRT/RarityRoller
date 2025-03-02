@@ -34,28 +34,28 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Elements
+    // Get DOM elements
     const rollButton = document.getElementById('roll-button');
     const autoRollButton = document.getElementById('auto-roll-button');
     const rarityText = document.getElementById('rarity-text');
+    const spinner = document.getElementById('spinner');
     const rollCountDisplay = document.getElementById('roll-count');
     const luckBonusDisplay = document.getElementById('luck-bonus');
     const inventoryContainer = document.getElementById('inventory-items');
     const inventoryCountDisplay = document.getElementById('inventory-count');
     const coinCountDisplay = document.getElementById('coin-count');
-    const spinnerElement = document.getElementById('spinner');
     const sellAllButton = document.getElementById('sell-all-button');
     const buyLuckButton = document.getElementById('buy-luck-button');
     const buyMaxLuckButton = document.getElementById('buy-max-luck-button');
-    const toggleLuckButton = document.getElementById('toggle-luck-button');
-    const luckStatusDisplay = document.getElementById('luck-status');
-    const buyStorageButton = document.getElementById('buy-storage-button');
-    const inventoryCapacityDisplay = document.getElementById('inventory-capacity');
-    const displayedCapacity = document.getElementById('displayed-capacity');
     const luckCostDisplay = document.getElementById('luck-cost');
+    const buyStorageButton = document.getElementById('buy-storage-button');
     const storageCostDisplay = document.getElementById('storage-cost');
+    const capacityDisplay = document.getElementById('displayed-capacity');
     const unequipButton = document.getElementById('unequip-button');
+    const toggleLuckButton = document.getElementById('toggle-luck-button');
+    const luckStatusIndicator = document.getElementById('luck-status');
 
     // Secret buttons
     const secretButton = document.getElementById('secret-button');
@@ -69,29 +69,347 @@ document.addEventListener('DOMContentLoaded', function() {
     const legendarySecretButton2 = document.getElementById('legendary-secret-button2');
     const mythicalSecretButton = document.getElementById('mythical-secret-button');
 
-    // Auto Sell toggles
-    const autoSellToggles = document.querySelectorAll('.auto-sell-toggle');
-
     // Variables
     let isRolling = false;
-    let autoRollInterval = null;
-    let equippedRarity = null;  // Track equipped rarity
+    let isAutoRolling = false;
+    let inventory = [];
+    let equippedRarity = null;
 
-    // Add event listener for unequip button
+    // Initialize auto-sell toggle buttons
+    document.querySelectorAll('.auto-sell-toggle').forEach(button => {
+        button.addEventListener('click', function() {
+            toggleAutoSell(this.dataset.rarity);
+        });
+    });
+
+    // Fetch inventory on page load
+    if (inventoryContainer) {
+        const inventoryItems = inventoryContainer.querySelectorAll('.inventory-item');
+        inventory = Array.from(inventoryItems).map(item => item.dataset.rarity);
+
+        // Add click event listeners to sell buttons
+        document.querySelectorAll('.sell-button').forEach(button => {
+            button.addEventListener('click', () => sellItem(button.dataset.rarity));
+        });
+
+        // Add click event listeners to equip buttons
+        document.querySelectorAll('.equip-button').forEach(button => {
+            button.addEventListener('click', () => equipItem(button.dataset.rarity));
+        });
+    }
+
+    // Roll button
+    if (rollButton) {
+        rollButton.addEventListener('click', async function() {
+            if (isRolling) return;
+            await roll();
+        });
+    }
+
+    // Auto roll button
+    if (autoRollButton) {
+        autoRollButton.addEventListener('click', function() {
+            if (this.classList.contains('disabled')) return;
+
+            isAutoRolling = !isAutoRolling;
+
+            if (isAutoRolling) {
+                this.textContent = 'Stop Auto Roll';
+                this.classList.remove('btn-secondary');
+                this.classList.add('btn-danger');
+                autoRoll();
+            } else {
+                this.textContent = 'Auto Roll';
+                this.classList.remove('btn-danger');
+                this.classList.add('btn-secondary');
+            }
+        });
+    }
+
+    // Sell All button
+    if (sellAllButton) {
+        sellAllButton.addEventListener('click', sellAll);
+    }
+
+    // Buy Luck button
+    if (buyLuckButton) {
+        buyLuckButton.addEventListener('click', buyLuck);
+    }
+
+    // Buy Max Luck button
+    if (buyMaxLuckButton) {
+        buyMaxLuckButton.addEventListener('click', buyMaxLuck);
+    }
+
+    // Buy Storage button
+    if (buyStorageButton) {
+        buyStorageButton.addEventListener('click', buyStorage);
+    }
+
+    // Toggle Luck button
+    if (toggleLuckButton) {
+        toggleLuckButton.addEventListener('click', toggleLuck);
+    }
+
+    // Unequip button
     if (unequipButton) {
         unequipButton.addEventListener('click', unequipItem);
     }
 
-    // Sell all functionality
-    sellAllButton.addEventListener('click', async function() {
+    // Secret buttons
+    if (secretButton) {
+        secretButton.addEventListener('click', function() {
+            activateSuperLuck('uncommon');
+        });
+    }
+
+    if (goodSecretButton) {
+        goodSecretButton.addEventListener('click', function() {
+            activateSuperLuck('good');
+        });
+    }
+
+    if (epicSecretButton) {
+        epicSecretButton.addEventListener('click', function() {
+            activateSuperLuck('epic');
+        });
+    }
+
+    if (epicSecretButton2) {
+        epicSecretButton2.addEventListener('click', function() {
+            activateSuperLuck('epic2');
+        });
+    }
+
+    if (divineSecretButton) {
+        divineSecretButton.addEventListener('click', function() {
+            activateDivineLuck();
+        });
+    }
+
+    if (divineSecretButton2) {
+        divineSecretButton2.addEventListener('click', function() {
+            activateDivineLuck2();
+        });
+    }
+
+    if (rareSecretButton) {
+        rareSecretButton.addEventListener('click', function() {
+            activateRareLuck();
+        });
+    }
+
+    if (legendarySecretButton) {
+        legendarySecretButton.addEventListener('click', function() {
+            activateLegendaryLuck();
+        });
+    }
+
+    if (legendarySecretButton2) {
+        legendarySecretButton2.addEventListener('click', function() {
+            activateLegendaryLuck2();
+        });
+    }
+
+    if (mythicalSecretButton) {
+        mythicalSecretButton.addEventListener('click', function() {
+            activateMythicalLuck();
+        });
+    }
+
+    // Roll function
+    async function roll() {
+        if (isRolling) return;
+
+        isRolling = true;
+        spinner.classList.remove('d-none');
+        rollButton.disabled = true;
+
+        try {
+            const response = await fetch('/roll');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update UI
+                rarityText.textContent = data.result;
+                rarityText.style.color = data.color;
+                rollCountDisplay.textContent = data.roll_count;
+                luckBonusDisplay.textContent = `${data.luck_bonus}x`;
+                coinCountDisplay.textContent = data.coins;
+
+                // Show special effects for rare tiers
+                showSpecialEffects(data.result);
+
+                // Show secret buttons based on result
+                revealSecretButtons(data.result);
+
+                // Update auto roll button if needed
+                if (data.can_auto_roll && autoRollButton.classList.contains('disabled')) {
+                    autoRollButton.classList.remove('disabled');
+                    autoRollButton.disabled = false;
+                    autoRollButton.textContent = 'Auto Roll';
+                }
+
+                // Update inventory
+                inventory = data.inventory;
+                updateInventoryDisplay();
+
+                if (data.auto_sold) {
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = `Auto-sold ${data.result} for ${data.auto_sell_value} coins!`;
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 2000);
+                }
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Error rolling';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error rolling:', error);
+        } finally {
+            spinner.classList.add('d-none');
+            rollButton.disabled = false;
+            isRolling = false;
+        }
+    }
+
+    // Auto roll function
+    async function autoRoll() {
+        if (!isAutoRolling) return;
+
+        await roll();
+
+        if (isAutoRolling) {
+            setTimeout(autoRoll, 100);
+        }
+    }
+
+    // Function to show special effects for rare tiers
+    function showSpecialEffects(rarity) {
+        // Remove any existing effects
+        const existingHaxEffect = document.querySelector('.hax-effect');
+        if (existingHaxEffect) {
+            existingHaxEffect.remove();
+        }
+
+        const existingSpecialEffect = document.querySelector('.special-effect');
+        if (existingSpecialEffect) {
+            existingSpecialEffect.remove();
+        }
+
+        // Add effects based on rarity
+        if (rarity === 'Hax') {
+            const effect = document.createElement('div');
+            effect.className = 'hax-effect';
+            const inner = document.createElement('div');
+            inner.className = 'hax-inner';
+            effect.appendChild(inner);
+            document.body.appendChild(effect);
+
+            setTimeout(() => {
+                effect.remove();
+            }, 3000);
+        } else if (rarity === 'Special') {
+            const effect = document.createElement('div');
+            effect.className = 'special-effect';
+            const inner = document.createElement('div');
+            inner.className = 'special-inner';
+            effect.appendChild(inner);
+            document.body.appendChild(effect);
+
+            setTimeout(() => {
+                effect.remove();
+            }, 3000);
+        }
+    }
+
+    // Function to reveal secret buttons
+    function revealSecretButtons(rarity) {
+        // Hide all secret buttons first
+        [secretButton, goodSecretButton, epicSecretButton, epicSecretButton2, 
+         divineSecretButton, divineSecretButton2, rareSecretButton, 
+         legendarySecretButton, legendarySecretButton2, mythicalSecretButton].forEach(btn => {
+            if (btn) btn.classList.add('d-none');
+        });
+
+        // Reveal button based on rarity
+        if (rarity === 'Secret') {
+            if (secretButton) secretButton.classList.remove('d-none');
+        } else if (rarity === 'Good') {
+            if (goodSecretButton) goodSecretButton.classList.remove('d-none');
+        } else if (rarity === 'Epic') {
+            if (epicSecretButton) epicSecretButton.classList.remove('d-none');
+            if (epicSecretButton2) epicSecretButton2.classList.remove('d-none');
+        } else if (rarity === 'Divine') {
+            if (divineSecretButton) divineSecretButton.classList.remove('d-none');
+            if (divineSecretButton2) divineSecretButton2.classList.remove('d-none');
+        } else if (rarity === 'Rare') {
+            if (rareSecretButton) rareSecretButton.classList.remove('d-none');
+        } else if (rarity === 'Legendary') {
+            if (legendarySecretButton) legendarySecretButton.classList.remove('d-none');
+            if (legendarySecretButton2) legendarySecretButton2.classList.remove('d-none');
+        } else if (rarity === 'Mythical') {
+            if (mythicalSecretButton) mythicalSecretButton.classList.remove('d-none');
+        }
+    }
+
+    // Function to sell an item
+    async function sellItem(rarity) {
+        try {
+            const response = await fetch(`/sell/${rarity}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update UI
+                coinCountDisplay.textContent = data.coins;
+                inventory = data.inventory;
+                updateInventoryDisplay();
+
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Sold ${rarity} for ${data.value} coins!`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Error selling item';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error selling item:', error);
+        }
+    }
+
+    // Function to sell all items
+    async function sellAll() {
+        if (inventory.length === 0) {
+            // Show error message
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-warning position-fixed top-0 start-50 translate-middle-x mt-3';
+            notification.textContent = 'No items to sell!';
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 2000);
+            return;
+        }
+
         try {
             const response = await fetch('/sell-all');
             const data = await response.json();
 
             if (response.ok) {
-                // Update displays
+                // Update UI
                 coinCountDisplay.textContent = data.coins;
-                updateInventoryDisplay(data.inventory);
+                inventory = data.inventory;
+                updateInventoryDisplay();
 
                 // Show success message
                 const notification = document.createElement('div');
@@ -103,887 +421,500 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show error message
                 const notification = document.createElement('div');
                 notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = data.error || 'Failed to sell all items';
+                notification.textContent = data.error || 'Error selling all items';
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 2000);
             }
         } catch (error) {
             console.error('Error selling all items:', error);
         }
-    });
-
-    // Secret button functionality
-    if (secretButton) {
-        secretButton.addEventListener('click', async function() {
-            try {
-                const response = await fetch('/activate-super-luck/uncommon');
-                const data = await response.json();
-
-                if (response.ok) {
-                    secretButton.disabled = true;
-                    secretButton.style.display = 'none';
-
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = '🌟 Super luck activated for 10 seconds! 🌟';
-                    document.body.appendChild(notification);
-
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                } else {
-                    console.error('Failed to activate super luck:', data.error);
-                }
-            } catch (error) {
-                console.error('Error activating super luck:', error);
-            }
-        });
     }
 
-    if (goodSecretButton) {
-        goodSecretButton.addEventListener('click', async function() {
-            try {
-                const response = await fetch('/activate-super-luck/good');
-                const data = await response.json();
-
-                if (response.ok) {
-                    goodSecretButton.disabled = true;
-                    goodSecretButton.style.display = 'none';
-
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = '🌟 Super luck activated for 10 seconds! 🌟';
-                    document.body.appendChild(notification);
-
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                } else {
-                    console.error('Failed to activate super luck:', data.error);
-                }
-            } catch (error) {
-                console.error('Error activating super luck:', error);
-            }
-        });
-    }
-
-    if (epicSecretButton) {
-        epicSecretButton.addEventListener('click', async function() {
-            try {
-                const response = await fetch('/activate-super-luck/epic');
-                const data = await response.json();
-
-                if (response.ok) {
-                    epicSecretButton.disabled = true;
-                    epicSecretButton.style.display = 'none';
-
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = '🌟 Super luck activated for 10 seconds! 🌟';
-                    document.body.appendChild(notification);
-
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                } else {
-                    console.error('Failed to activate super luck:', data.error);
-                }
-            } catch (error) {
-                console.error('Error activating super luck:', error);
-            }
-        });
-    }
-
-    if (epicSecretButton2) {
-        epicSecretButton2.addEventListener('click', async function() {
-            try {
-                const response = await fetch('/activate-super-luck/epic2');
-                const data = await response.json();
-
-                if (response.ok) {
-                    epicSecretButton2.disabled = true;
-                    epicSecretButton2.style.display = 'none';
-
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = '🌟 300x Luck activated for 15 seconds! 🌟';
-                    document.body.appendChild(notification);
-
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                } else {
-                    console.error('Failed to activate super luck:', data.error);
-                }
-            } catch (error) {
-                console.error('Error activating super luck:', error);
-            }
-        });
-    }
-
-    if (divineSecretButton) {
-        divineSecretButton.addEventListener('click', async function() {
-            try {
-                const response = await fetch('/activate-divine-luck');
-                const data = await response.json();
-
-                if (response.ok) {
-                    divineSecretButton.disabled = true;
-                    divineSecretButton.style.display = 'none';
-
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = '🌟 Permanent +50 luck bonus activated! 🌟';
-                    document.body.appendChild(notification);
-
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                } else {
-                    console.error('Failed to activate divine luck:', data.error);
-                }
-            } catch (error) {
-                console.error('Error activating divine luck:', error);
-            }
-        });
-    }
-
-    if (divineSecretButton2) {
-        divineSecretButton2.addEventListener('click', async function() {
-            try {
-                const response = await fetch('/activate-divine-luck2'); // Added new route
-                const data = await response.json();
-
-                if (response.ok) {
-                    divineSecretButton2.disabled = true;
-                    divineSecretButton2.style.display = 'none';
-
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = '🌟 Permanent +75 luck bonus activated! 🌟'; // Different bonus
-                    document.body.appendChild(notification);
-
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                } else {
-                    console.error('Failed to activate divine luck 2:', data.error);
-                }
-            } catch (error) {
-                console.error('Error activating divine luck 2:', error);
-            }
-        });
-    }
-
-    if (rareSecretButton) {
-        rareSecretButton.addEventListener('click', async function() {
-            try {
-                const response = await fetch('/activate-rare-luck');
-                const data = await response.json();
-
-                if (response.ok) {
-                    rareSecretButton.disabled = true;
-                    rareSecretButton.style.display = 'none';
-
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = '🌟 x2500 luck for 1 roll activated! 🌟';
-                    document.body.appendChild(notification);
-
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                } else {
-                    console.error('Failed to activate rare luck:', data.error);
-                }
-            } catch (error) {
-                console.error('Error activating rare luck:', error);
-            }
-        });
-    }
-
-    function updateInventoryDisplay(inventory = null) {
-        inventoryContainer.innerHTML = '';
-        if (inventory === null){
-            fetch('/inventory')
-                .then(res => res.json())
-                .then(inv => {
-                    inventoryCountDisplay.textContent = inv.length;
-                    inv.forEach(rarity => {
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'inventory-item';
-                        itemDiv.dataset.rarity = rarity;
-
-                        const badge = document.createElement('span');
-                        badge.className = 'badge';
-                        badge.style.backgroundColor = rarityColors[rarity];
-                        badge.textContent = rarity;
-
-                        const sellButton = document.createElement('button');
-                        sellButton.className = 'btn btn-sm btn-outline-warning sell-button';
-                        sellButton.dataset.rarity = rarity;
-                        sellButton.innerHTML = `Sell (${rarityValues[rarity]} <i class="fas fa-coins"></i>)`;
-
-                        const equipButton = document.createElement('button'); // Added equip button
-                        equipButton.className = 'btn btn-sm btn-outline-primary equip-button';
-                        equipButton.dataset.rarity = rarity;
-                        equipButton.textContent = 'Equip';
-
-                        sellButton.addEventListener('click', () => sellItem(rarity));
-                        equipButton.addEventListener('click', () => equipItem(rarity)); // Added equip event listener
-
-
-                        itemDiv.appendChild(badge);
-                        itemDiv.appendChild(sellButton);
-                        itemDiv.appendChild(equipButton); // Added equip button to itemDiv
-                        inventoryContainer.appendChild(itemDiv);
-                    });
-                });
-        } else {
-            inventoryCountDisplay.textContent = inventory.length;
-            inventory.forEach(rarity => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'inventory-item';
-                itemDiv.dataset.rarity = rarity;
-
-                const badge = document.createElement('span');
-                badge.className = 'badge';
-                badge.style.backgroundColor = rarityColors[rarity];
-                badge.textContent = rarity;
-
-                const sellButton = document.createElement('button');
-                sellButton.className = 'btn btn-sm btn-outline-warning sell-button';
-                sellButton.dataset.rarity = rarity;
-                sellButton.innerHTML = `Sell (${rarityValues[rarity]} <i class="fas fa-coins"></i>)`;
-
-                const equipButton = document.createElement('button'); // Added equip button
-                equipButton.className = 'btn btn-sm btn-outline-primary equip-button';
-                equipButton.dataset.rarity = rarity;
-                equipButton.textContent = 'Equip';
-
-                sellButton.addEventListener('click', () => sellItem(rarity));
-                equipButton.addEventListener('click', () => equipItem(rarity)); // Added equip event listener
-
-
-                itemDiv.appendChild(badge);
-                itemDiv.appendChild(sellButton);
-                itemDiv.appendChild(equipButton); // Added equip button to itemDiv
-                inventoryContainer.appendChild(itemDiv);
-            });
-        }
-    }
-
-    async function sellItem(rarity) {
-        try {
-            const response = await fetch(`/sell/${rarity}`);
-            const data = await response.json();
-
-            if (response.ok) {
-                // Update displays
-                coinCountDisplay.textContent = data.coins;
-                updateInventoryDisplay(data.inventory);
-
-                // Show success message
-                const notification = document.createElement('div');
-                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = `Sold ${rarity} for ${data.value} coins!`;
-                document.body.appendChild(notification);
-                setTimeout(() => notification.remove(), 2000);
-            } else {
-                console.error('Failed to sell item:', data.error);
-            }
-        } catch (error) {
-            console.error('Error selling item:', error);
-        }
-    }
-
-    // Buy luck functionality
-    buyLuckButton.addEventListener('click', async function() {
+    // Function to buy luck
+    async function buyLuck() {
         try {
             const response = await fetch('/buy-luck');
             const data = await response.json();
 
             if (response.ok) {
-                // Update displays
+                // Update UI
                 coinCountDisplay.textContent = data.coins;
-                luckBonusDisplay.textContent = data.total_luck + 'x';
-                document.getElementById('luck-cost').textContent = data.next_cost;
+                luckBonusDisplay.textContent = `${data.total_luck}x`;
+                luckCostDisplay.textContent = data.next_cost;
 
                 // Show success message
                 const notification = document.createElement('div');
                 notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = 'Purchased +1 Luck!';
+                notification.textContent = `Bought luck boost! New luck: ${data.total_luck}x`;
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 2000);
             } else {
                 // Show error message
                 const notification = document.createElement('div');
                 notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = data.error || 'Failed to buy luck';
+                notification.textContent = data.error || 'Error buying luck';
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 2000);
             }
         } catch (error) {
             console.error('Error buying luck:', error);
         }
-    });
+    }
 
-    // Buy max luck functionality
-    const buyMaxLuckButton = document.getElementById('buy-max-luck-button');
-
-    buyMaxLuckButton.addEventListener('click', async function() {
+    // Function to buy max luck
+    async function buyMaxLuck() {
         try {
             const response = await fetch('/buy-max-luck');
             const data = await response.json();
 
             if (response.ok) {
-                // Update displays
+                // Update UI
                 coinCountDisplay.textContent = data.coins;
-                luckBonusDisplay.textContent = data.total_luck + 'x';
-                document.getElementById('luck-cost').textContent = data.next_cost;
+                luckBonusDisplay.textContent = `${data.total_luck}x`;
+                luckCostDisplay.textContent = data.next_cost;
 
                 // Show success message
                 const notification = document.createElement('div');
                 notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = `Purchased ${data.levels_purchased} luck levels for ${data.total_spent} coins!`;
+                notification.textContent = `Bought ${data.levels_purchased} luck boosts for ${data.total_spent} coins! New luck: ${data.total_luck}x`;
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 2000);
             } else {
                 // Show error message
                 const notification = document.createElement('div');
                 notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = data.error || 'Failed to buy max luck';
+                notification.textContent = data.error || 'Error buying max luck';
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 2000);
             }
         } catch (error) {
             console.error('Error buying max luck:', error);
         }
-    });
+    }
 
-    // Toggle luck functionality
-    const toggleLuckButton = document.getElementById('toggle-luck-button');
-    const luckStatusDisplay = document.getElementById('luck-status');
-
-    toggleLuckButton.addEventListener('click', async function() {
+    // Function to toggle luck
+    async function toggleLuck() {
         try {
             const response = await fetch('/toggle-luck');
             const data = await response.json();
 
             if (response.ok) {
-                // Update the luck display
-                luckBonusDisplay.textContent = data.total_luck + 'x';
-                luckStatusDisplay.textContent = data.luck_active ? 'ON' : 'OFF';
-                luckStatusDisplay.className = data.luck_active ? 'badge bg-success' : 'badge bg-danger';
+                // Update UI
+                luckBonusDisplay.textContent = `${data.total_luck}x`;
 
-                // Show notification
-                const notification = document.createElement('div');
-                notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = `Luck ${data.luck_active ? 'activated' : 'deactivated'}! Current luck: ${data.total_luck}x`;
-                document.body.appendChild(notification);
-                setTimeout(() => notification.remove(), 2000);
-            } else {
-                console.error('Failed to toggle luck:', data.error);
-            }
-        } catch (error) {
-            console.error('Error toggling luck:', error);
-        }
-    });
-
-    // Buy storage functionality
-    const buyStorageButton = document.getElementById('buy-storage-button');
-    const displayedCapacity = document.getElementById('displayed-capacity');
-    const storageCostDisplay = document.getElementById('storage-cost');
-
-    buyStorageButton.addEventListener('click', async function() {
-        try {
-            const response = await fetch('/buy-storage');
-            const data = await response.json();
-
-            if (response.ok) {
-                // Update displays
-                coinCountDisplay.textContent = data.coins;
-                displayedCapacity.textContent = data.inventory_capacity;
-                storageCostDisplay.textContent = data.next_cost;
+                if (data.luck_active) {
+                    luckStatusIndicator.textContent = 'ON';
+                    luckStatusIndicator.className = 'badge bg-success';
+                } else {
+                    luckStatusIndicator.textContent = 'OFF';
+                    luckStatusIndicator.className = 'badge bg-danger';
+                }
 
                 // Show success message
                 const notification = document.createElement('div');
-                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = 'Storage upgraded successfully!';
+                notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Luck is now ${data.luck_active ? 'ON' : 'OFF'}`;
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 2000);
             } else {
                 // Show error message
                 const notification = document.createElement('div');
                 notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = data.error || 'Failed to upgrade storage';
+                notification.textContent = data.error || 'Error toggling luck';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error toggling luck:', error);
+        }
+    }
+
+    // Function to buy storage
+    async function buyStorage() {
+        try {
+            const response = await fetch('/buy-storage');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update UI
+                coinCountDisplay.textContent = data.coins;
+                capacityDisplay.textContent = data.inventory_capacity;
+                storageCostDisplay.textContent = data.next_cost;
+                document.getElementById('inventory-capacity').textContent = data.inventory_capacity;
+
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Bought storage upgrade! New capacity: ${data.inventory_capacity} slots`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Error buying storage';
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 2000);
             }
         } catch (error) {
             console.error('Error buying storage:', error);
         }
-    });
+    }
 
-    // Auto-sell toggle functionality
-    autoSellToggles.forEach(button => {
-        button.addEventListener('click', async function() {
-            const rarity = this.dataset.rarity;
-            try {
-                const response = await fetch(`/toggle-auto-sell/${rarity}`);
-                const data = await response.json();
-
-                if (response.ok) {
-                    // Update button appearance
-                    if (data.auto_sell_enabled) {
-                        this.classList.remove('btn-outline-secondary');
-                        this.classList.add('btn-success');
-                        this.innerHTML = '<i class="fas fa-check-circle"></i> ON';
-                    } else {
-                        this.classList.remove('btn-success');
-                        this.classList.add('btn-outline-secondary');
-                        this.innerHTML = '<i class="fas fa-times-circle"></i> OFF';
-                    }
-
-                    // Show notification
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = `Auto-sell for ${rarity} ${data.auto_sell_enabled ? 'enabled' : 'disabled'}`;
-                    document.body.appendChild(notification);
-                    setTimeout(() => notification.remove(), 2000);
-                } else {
-                    // Show error message
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = data.error || 'Failed to toggle auto-sell';
-                    document.body.appendChild(notification);
-                    setTimeout(() => notification.remove(), 2000);
-                }
-            } catch (error) {
-                console.error('Error toggling auto-sell:', error);
-            }
-        });
-    });
-
-    async function performRoll() {
-        if (rollButton.disabled) return;
-
-        // Disable button during roll
-        rollButton.disabled = true;
-
+    // Function to toggle auto-sell for a rarity
+    async function toggleAutoSell(rarity) {
         try {
-            // Show spinner, hide result
-            rarityText.classList.add('d-none');
-            spinnerElement.classList.remove('d-none');
-
-            const response = await fetch('/roll');
+            const response = await fetch(`/toggle-auto-sell/${rarity}`);
             const data = await response.json();
 
             if (response.ok) {
-                // Update displays 
-                rollCountDisplay.textContent = data.roll_count;
-                luckBonusDisplay.textContent = data.luck_bonus + 'x';
-                updateInventoryDisplay(data.inventory);
-                coinCountDisplay.textContent = data.coins;
-
-                // Show the result
-                rarityText.textContent = data.result;
-                rarityText.style.color = data.color;
-                rarityText.classList.remove('d-none');
-                spinnerElement.classList.add('d-none');
-
-                // Handle secret buttons based on rarity
-                secretButton.classList.add('d-none');
-                goodSecretButton.classList.add('d-none');
-                epicSecretButton.classList.add('d-none');
-                epicSecretButton2.classList.add('d-none');
-                divineSecretButton.classList.add('d-none');
-                divineSecretButton2.classList.add('d-none');
-                rareSecretButton.classList.add('d-none'); 
-                legendarySecretButton.classList.add('d-none');
-                legendarySecretButton2.classList.add('d-none');
-
-                if (data.result === 'Uncommon') {
-                    secretButton.classList.remove('d-none');
-                    // Position the button over the first character
-                    secretButton.style.left = '30%';
-                    secretButton.style.top = '20px';
-                } else if (data.result === 'Good') {
-                    goodSecretButton.classList.remove('d-none');
-                    // Position the button over the 'g' of Good
-                    goodSecretButton.style.left = '40%';
-                    goodSecretButton.style.top = '20px';
-                } else if (data.result === 'Epic') {
-                    epicSecretButton.classList.remove('d-none');
-                    epicSecretButton2.classList.remove('d-none');
-                    // Position the buttons over the 'c' of Epic
-                    epicSecretButton.style.left = '50%';
-                    epicSecretButton.style.top = '20px';
-                    epicSecretButton2.style.left = '60%';
-                    epicSecretButton2.style.top = '20px';
-                } else if (data.result === 'Divine') {
-                    divineSecretButton.classList.remove('d-none');
-                    divineSecretButton2.classList.remove('d-none');
-                    // Position the buttons on either side of Divine
-                    divineSecretButton.style.left = '40%';
-                    divineSecretButton.style.top = '20px';
-                    divineSecretButton2.style.left = '60%';
-                    divineSecretButton2.style.top = '20px';
-                } else if (data.result === 'Legendary') {
-                    legendarySecretButton.classList.remove('d-none');
-                    legendarySecretButton2.classList.remove('d-none');
-                    // Position the buttons on either side of Legendary
-                    legendarySecretButton.style.left = '35%';
-                    legendarySecretButton.style.top = '20px';
-                    legendarySecretButton2.style.left = '65%';
-                    legendarySecretButton2.style.top = '20px';
-                } else if (data.result === 'Rare') {
-                    rareSecretButton.classList.remove('d-none');
-                    // Position the button over the 'i' of Divine
-                    rareSecretButton.style.left = '45%';
-                    rareSecretButton.style.top = '20px';
-                }
-
-                // Check for high-rarity rolls and apply special effects
-                const highRarities = ['Hyperpigmentation', 'Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret', 'Hax', 'Special', 'Chill']; 
-                if (highRarities.includes(data.result)) {
-                    // Create supernova effect
-                    const supernova = document.createElement('div');
-                    supernova.className = 'supernova';
-
-                    // If the color is a gradient, handle it specially
-                    if (data.color.startsWith('linear-gradient')) {
-                        supernova.style.background = data.color;
+                // Update button appearance
+                document.querySelectorAll(`.auto-sell-toggle[data-rarity="${rarity}"]`).forEach(button => {
+                    if (data.auto_sell_enabled) {
+                        button.classList.remove('btn-outline-secondary');
+                        button.classList.add('btn-success');
+                        button.innerHTML = '<i class="fas fa-check-circle"></i> ON';
                     } else {
-                        supernova.style.background = `radial-gradient(circle, ${data.color}66 0%, ${data.color}33 50%, transparent 70%)`;
+                        button.classList.remove('btn-success');
+                        button.classList.add('btn-outline-secondary');
+                        button.innerHTML = '<i class="fas fa-times-circle"></i> OFF';
                     }
+                });
 
-                    document.body.appendChild(supernova);
-
-                    // Create special animation for Hyperpigmentation rarity
-                    if (data.result === 'Hyperpigmentation') {
-                        // Create main effect
-                        const hyperEffect = document.createElement('div');
-                        hyperEffect.className = 'hyperpigmentation-effect';
-
-                        const hyperInner = document.createElement('div');
-                        hyperInner.className = 'hyperpigmentation-inner';
-                        hyperEffect.appendChild(hyperInner);
-
-                        // Add particles for enhanced effect
-                        const particlesContainer = document.createElement('div');
-                        particlesContainer.className = 'hyperpigmentation-particles';
-
-                        // Create multiple particles with random positions and animations
-                        for (let i = 0; i < 20; i++) {
-                            const particle = document.createElement('div');
-                            particle.className = 'hyperpigmentation-particle';
-
-                            // Random position
-                            const randomX = Math.random() * 100;
-                            const randomY = Math.random() * 100;
-                            particle.style.left = `${randomX}%`;
-                            particle.style.top = `${randomY}%`;
-
-                            // Random size
-                            const randomSize = Math.random() * 15 + 5;
-                            particle.style.width = `${randomSize}px`;
-                            particle.style.height = `${randomSize}px`;
-
-                            // Random animation
-                            const randomDuration = Math.random() * 3 + 2;
-                            const randomDelay = Math.random() * 2;
-                            particle.style.animation = `hyperpigmentation-pulse ${randomDuration}s infinite ${randomDelay}s`;
-
-                            particlesContainer.appendChild(particle);
-                        }
-
-                        hyperEffect.appendChild(particlesContainer);
-                        document.body.appendChild(hyperEffect);
-
-                        // Add text flash effect
-                        rarityText.style.textShadow = `0 0 15px ${data.color}, 0 0 25px ${data.color}, 0 0 35px ${data.color}`;
-
-                        // Remove effect after animation
-                        setTimeout(() => {
-                            hyperEffect.remove();
-                            rarityText.style.textShadow = '';
-                        }, 5000); // Longer duration for this special effect
-                    }
-                    // Create special animation for Hax rarity
-                    else if (data.result === 'Hax') {
-                        const haxEffect = document.createElement('div');
-                        haxEffect.className = 'hax-effect';
-
-                        const haxInner = document.createElement('div');
-                        haxInner.className = 'hax-inner';
-
-                        haxEffect.appendChild(haxInner);
-                        document.body.appendChild(haxEffect);
-
-                        // Remove effect after animation
-                        setTimeout(() => {
-                            haxEffect.remove();
-                        }, 3000);
-                    }
-                    // Create special animation for Special rarity
-                    else if (data.result === 'Special') {
-                        const specialEffect = document.createElement('div');
-                        specialEffect.className = 'special-effect';
-
-                        const specialInner = document.createElement('div');
-                        specialInner.className = 'special-inner';
-
-                        specialEffect.appendChild(specialInner);
-                        document.body.appendChild(specialEffect);
-
-                        // Remove effect after animation
-                        setTimeout(() => {
-                            specialEffect.remove();
-                        }, 3000);
-                    }
-                    // Create special animation for Chill rarity
-                    else if (data.result === 'Chill') {
-                        const chillEffect = document.createElement('div');
-                        chillEffect.className = 'chill-effect';
-
-                        const chillInner = document.createElement('div');
-                        chillInner.className = 'chill-inner';
-
-                        chillEffect.appendChild(chillInner);
-                        document.body.appendChild(chillEffect);
-
-                        // Remove effect after animation
-                        setTimeout(() => {
-                            chillEffect.remove();
-                        }, 3000);
-                    }
-                    // Create rotating star effect for Ancient or better rarities
-                    else if (['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret'].includes(data.result)) {
-                        const star = document.createElement('div');
-                        star.className = 'star-effect';
-
-                        const starInner = document.createElement('div');
-                        starInner.className = 'star-inner';
-                        starInner.style.backgroundColor = data.color;
-
-                        star.appendChild(starInner);
-                        document.body.appendChild(star);
-
-                        // Remove star after animation
-                        setTimeout(() => {
-                            star.remove();
-                        }, 2000);
-                    }
-
-                    // Remove supernova after animation
-                    setTimeout(() => {
-                        supernova.remove();
-                    }, 2000); 
-
-                    // Add mythic animation to the text
-                    rarityText.classList.add('mythic-animation');
-
-                    // Check if the result is Mythical to show the secret button
-                    if (data.result === 'Mythical') {
-                        // Show the mythical secret button
-                        const mythicalButton = document.getElementById('mythical-secret-button');
-                        if (mythicalButton) {
-                            mythicalButton.classList.remove('d-none');
-                        }
-                    }
-
-                    // Remove mythic animation after effect completes
-                    setTimeout(() => {
-                        rarityText.classList.remove('mythic-animation');
-                    }, 2000);
-
-                    // Play celebration sound
-                    const audio = new Audio('data:audio/wav;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAAGhgBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVWqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr///////////////////////////////////////////8AAAA5TEFNRTMuMTAwA8MAAAAAAAAAABQgJAi4TQABzAAAAob6xLBzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//sQxAADwAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==');
-                    audio.play();
-                }
-
-                // Show auto-sell notification if applicable
-                if (data.auto_sold) {
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent =`Auto-sold ${data.result} for ${data.auto_sell_value} coins!`;
-                    document.body.appendChild(notification);
-                    setTimeout(() => notification.remove(), 2000);
-                }
-
-                // Add standard roll animation
-                rarityText.classList.add('roll-animation');
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Auto-sell for ${rarity} is now ${data.auto_sell_enabled ? 'ON' : 'OFF'}`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
             } else {
-                throw new Error(data.error || 'Failed to roll');
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Error toggling auto-sell';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
             }
-
-            // Remove standard animation class after it completes
-            setTimeout(() => {
-                rarityText.classList.remove('roll-animation');
-            }, 500);
-
         } catch (error) {
-            console.error('Error:', error);
-            rarityText.textContent = error.message || 'Error occurred!';
-            rarityText.style.color = 'red';
-            rarityText.classList.remove('d-none');
-            spinnerElement.classList.add('d-none');
-            stopAutoRoll();
-
-            const notification = document.createElement('div');
-            notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
-            notification.textContent = error.message || 'Error occurred while rolling!';
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 3000);
-        }
-
-        // Re-enable button
-        setTimeout(() => {
-            rollButton.disabled = false;
-        }, 1000);
-    }
-
-    // Handle rarity result text
-    function updateRarityDisplay(result, color) {
-        // Reset secret buttons
-        secretButton.classList.add('d-none');
-        goodSecretButton.classList.add('d-none');
-        epicSecretButton.classList.add('d-none');
-        epicSecretButton2.classList.add('d-none');
-        divineSecretButton.classList.add('d-none');
-        divineSecretButton2.classList.add('d-none');
-        rareSecretButton.classList.add('d-none');
-        legendarySecretButton.classList.add('d-none');
-        legendarySecretButton2.classList.add('d-none');
-
-        rarityText.textContent = result;
-        rarityText.style.color = color;
-
-        // Show special buttons based on rarity
-        if (result === 'Secret') {
-            secretButton.classList.remove('d-none');
-        } else if (result === 'Good') {
-            goodSecretButton.classList.remove('d-none');
-        } else if (result === 'Epic') {
-            epicSecretButton.classList.remove('d-none');
-            epicSecretButton2.classList.remove('d-none');
-        } else if (result === 'Divine') {
-            divineSecretButton.classList.remove('d-none');
-            divineSecretButton2.classList.remove('d-none');
-        } else if (result === 'Legendary') {
-            legendarySecretButton.classList.remove('d-none');
-            legendarySecretButton2.classList.remove('d-none');
-        } else if (result === 'Rare') {
-            rareSecretButton.classList.remove('d-none');
+            console.error('Error toggling auto-sell:', error);
         }
     }
 
-    function startAutoRoll() {
-        if (isRolling) return;
-        isRolling = true;
-        autoRollButton.innerHTML = '<i class="fas fa-stop me-2"></i>Stop Auto Roll';
-        autoRollButton.classList.remove('btn-secondary');
-        autoRollButton.classList.add('btn-danger');
-        autoRollInterval = setInterval(performRoll, 1500);
-    }
+    // Function to activate super luck
+    async function activateSuperLuck(buttonType) {
+        try {
+            const response = await fetch(`/activate-super-luck/${buttonType}`);
+            const data = await response.json();
 
-    function stopAutoRoll() {
-        if (!isRolling) return;
-        isRolling = false;
-        clearInterval(autoRollInterval);
-        autoRollButton.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Auto Roll';
-        autoRollButton.classList.remove('btn-danger');
-        autoRollButton.classList.add('btn-secondary');
-    }
+            if (response.ok) {
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Super luck activated! (100x multiplier for 10 seconds)`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
 
-    rollButton.addEventListener('click', performRoll);
-
-    autoRollButton.addEventListener('click', function() {
-        if (isRolling) {
-            stopAutoRoll();
-        } else {
-            startAutoRoll();
+                // Hide the button
+                if (buttonType === 'uncommon') {
+                    secretButton.classList.add('d-none');
+                } else if (buttonType === 'good') {
+                    goodSecretButton.classList.add('d-none');
+                } else if (buttonType === 'epic') {
+                    epicSecretButton.classList.add('d-none');
+                } else if (buttonType === 'epic2') {
+                    epicSecretButton2.classList.add('d-none');
+                }
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Error activating super luck';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error activating super luck:', error);
         }
-    });
+    }
 
-    // Legendary Button Functionality
-    legendarySecretButton.addEventListener('click', async function() {
+    // Function to activate divine luck
+    async function activateDivineLuck() {
+        try {
+            const response = await fetch('/activate-divine-luck');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Divine luck activated! (+50 permanent luck)`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+
+                // Hide the button
+                divineSecretButton.classList.add('d-none');
+
+                // Refresh page to update luck display
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Error activating divine luck';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error activating divine luck:', error);
+        }
+    }
+
+    // Function to activate divine luck 2
+    async function activateDivineLuck2() {
+        try {
+            const response = await fetch('/activate-divine-luck2');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Divine luck 2 activated! (+75 permanent luck)`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+
+                // Hide the button
+                divineSecretButton2.classList.add('d-none');
+
+                // Refresh page to update luck display
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Error activating divine luck 2';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error activating divine luck 2:', error);
+        }
+    }
+
+    // Function to activate rare luck
+    async function activateRareLuck() {
+        try {
+            const response = await fetch('/activate-rare-luck');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Rare luck activated! (2500x multiplier for next roll)`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+
+                // Hide the button
+                rareSecretButton.classList.add('d-none');
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Error activating rare luck';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error activating rare luck:', error);
+        }
+    }
+
+    // Function to activate legendary luck
+    async function activateLegendaryLuck() {
         try {
             const response = await fetch('/activate-legendary-luck');
             const data = await response.json();
 
             if (response.ok) {
-                legendarySecretButton.disabled = true;
-                legendarySecretButton.style.display = 'none';
-
+                // Show success message
                 const notification = document.createElement('div');
                 notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = '🌟 10,000x luck bonus for next roll activated! 🌟';
+                notification.textContent = `Legendary luck activated! (10000x multiplier for next roll)`;
                 document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
 
-                setTimeout(() => {
-                    notification.remove();
-                }, 3000);
+                // Hide the button
+                legendarySecretButton.classList.add('d-none');
             } else {
-                console.error('Failed to activate legendary luck:', data.error);
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Error activating legendary luck';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
             }
         } catch (error) {
             console.error('Error activating legendary luck:', error);
         }
-    });
+    }
 
-    legendarySecretButton2.addEventListener('click', async function() {
+    // Function to activate legendary luck 2
+    async function activateLegendaryLuck2() {
         try {
             const response = await fetch('/activate-legendary-luck2');
             const data = await response.json();
 
             if (response.ok) {
-                legendarySecretButton2.disabled = true;
-                legendarySecretButton2.style.display = 'none';
-
+                // Show success message
                 const notification = document.createElement('div');
                 notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = '⚡ 15,000x luck bonus for next roll activated! ⚡';
+                notification.textContent = `Legendary luck 2 activated! (15000x multiplier for next roll)`;
                 document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
 
-                setTimeout(() => {
-                    notification.remove();
-                }, 3000);
+                // Hide the button
+                legendarySecretButton2.classList.add('d-none');
             } else {
-                console.error('Failed to activate legendary luck 2:', data.error);
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Error activating legendary luck 2';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
             }
         } catch (error) {
             console.error('Error activating legendary luck 2:', error);
         }
-    });
+    }
 
+    // Function to activate mythical luck
+    async function activateMythicalLuck() {
+        try {
+            const response = await fetch('/activate-mythical-luck');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Mythical luck activated! (500000x multiplier for next roll)`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+
+                // Hide the button
+                mythicalSecretButton.classList.add('d-none');
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Error activating mythical luck';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error activating mythical luck:', error);
+        }
+    }
+
+    // Function to update inventory display
+    function updateInventoryDisplay() {
+        if (!inventoryContainer) return;
+
+        inventoryCountDisplay.textContent = inventory.length;
+        inventoryContainer.innerHTML = '';
+
+        const inventoryCapacity = parseInt(document.getElementById('inventory-capacity').textContent, 10);
+        const capacityPercentage = (inventory.length / inventoryCapacity) * 100;
+
+        // Add warning class if inventory is getting full
+        if (capacityPercentage >= 90) {
+            inventoryCountDisplay.classList.add('text-danger');
+        } else if (capacityPercentage >= 70) {
+            inventoryCountDisplay.classList.add('text-warning');
+            inventoryCountDisplay.classList.remove('text-danger');
+        } else {
+            inventoryCountDisplay.classList.remove('text-warning', 'text-danger');
+        }
+
+        // Create inventory items
+        inventory.forEach(rarity => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'inventory-item';
+            itemDiv.dataset.rarity = rarity;
+
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.style.backgroundColor = rarityColors[rarity];
+            badge.textContent = rarity;
+
+            // Add equipped indicator if this item is equipped
+            if (equippedRarity === rarity) {
+                const equippedIndicator = document.createElement('span');
+                equippedIndicator.className = 'equipped-indicator';
+                equippedIndicator.textContent = '✓';
+                badge.appendChild(equippedIndicator);
+            }
+
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'd-flex gap-1';
+
+            const equipButton = document.createElement('button');
+            equipButton.className = 'btn btn-sm btn-outline-primary equip-button';
+            equipButton.dataset.rarity = rarity;
+            equipButton.textContent = equippedRarity === rarity ? 'Equipped' : 'Equip';
+            if (equippedRarity === rarity) {
+                equipButton.disabled = true;
+            }
+            equipButton.addEventListener('click', () => equipItem(rarity));
+
+            const sellButton = document.createElement('button');
+            sellButton.className = 'btn btn-sm btn-outline-warning sell-button';
+            sellButton.dataset.rarity = rarity;
+            sellButton.dataset.value = rarityValues[rarity];
+            sellButton.innerHTML = `Sell (${rarityValues[rarity]} <i class="fas fa-coins"></i>)`;
+            if (equippedRarity === rarity) {
+                sellButton.disabled = true;
+            }
+            sellButton.addEventListener('click', () => sellItem(rarity));
+
+            buttonContainer.appendChild(equipButton);
+            buttonContainer.appendChild(sellButton);
+
+            itemDiv.appendChild(badge);
+            itemDiv.appendChild(buttonContainer);
+
+            inventoryContainer.appendChild(itemDiv);
+        });
+    }
+
+    // Function to equip an item
     async function equipItem(rarity) {
         try {
             const response = await fetch(`/equip/${rarity}`);
             const data = await response.json();
 
             if (response.ok) {
-                equippedRarity = rarity; // Store equipped rarity
+                // Set equipped rarity
+                equippedRarity = rarity;
 
-                // Toggle unequip button visibility
-                const unequipButton = document.getElementById('unequip-button');
+                // Show unequip button
                 if (unequipButton) {
                     unequipButton.classList.remove('d-none');
                 }
 
-                // Update inventory to show equipped status
+                // Apply visual effect based on rarity
+                applyEquippedEffect(rarity);
+
+                // Update inventory display to show equipped status
                 updateInventoryDisplay();
 
                 // Show success message
                 const notification = document.createElement('div');
                 notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                notification.textContent = `${rarity} equipped!`;
+                notification.textContent = `Equipped ${rarity}!`;
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 2000);
-
-                // Add animation for all rarities (more impressive for higher rarities)
-                addEquippedAnimation(rarity);
             } else {
                 console.error('Failed to equip item:', data.error);
             }
@@ -992,8 +923,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Create animation based on rarity
-    function addEquippedAnimation(rarity) {
+    // Function to apply visual effect for equipped rarity
+    function applyEquippedEffect(rarity) {
         // Remove any existing animations first
         removeEquippedAnimations();
 
@@ -1066,9 +997,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error unequipping item:', error);
         }
     }
-
 });
-
 
 // Placeholder for rarity colors and values (replace with your actual data)
 const rarityColors = {
