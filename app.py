@@ -44,6 +44,22 @@ def index():
             session['inventory_upgrade'] = 0
         if 'auto_sell_settings' not in session:
             session['auto_sell_settings'] = {rarity: False for rarity in RARITY_TIERS}
+            
+        # Check daily reward status
+        can_claim_daily = True
+        time_until_next = "Available now!"
+        
+        if 'last_daily_claim' in session:
+            last_claim = datetime.fromisoformat(session['last_daily_claim'])
+            now = datetime.now()
+            can_claim_daily = (now - last_claim) > timedelta(hours=24)
+            
+            if not can_claim_daily:
+                next_claim = last_claim + timedelta(hours=24)
+                time_left = next_claim - now
+                hours_left = int(time_left.total_seconds() // 3600)
+                minutes_left = int((time_left.total_seconds() % 3600) // 60)
+                time_until_next = f"{hours_left}h {minutes_left}m"
 
         return render_template('index.html', 
                              rarity_tiers=RARITY_TIERS, 
@@ -55,7 +71,9 @@ def index():
                              purchased_luck=session['purchased_luck'],
                              inventory_capacity=3 + session.get('inventory_upgrade', 0),
                              inventory_upgrade=session.get('inventory_upgrade', 0),
-                             auto_sell_settings=session.get('auto_sell_settings', {}))
+                             auto_sell_settings=session.get('auto_sell_settings', {}),
+                             can_claim_daily=can_claim_daily,
+                             time_until_next=time_until_next)
     except Exception as e:
         logger.error(f"Error rendering index: {e}")
         return "An error occurred", 500
@@ -517,6 +535,93 @@ def reset_all():
     except Exception as e:
         logger.error(f"Error resetting all stats: {e}")
         return jsonify({"error": "Failed to reset all stats"}), 500
+        
+@app.route('/check-daily-reward')
+def check_daily_reward():
+    try:
+        # If last_daily_claim doesn't exist or it's older than 24 hours
+        if 'last_daily_claim' not in session:
+            can_claim = True
+        else:
+            last_claim = datetime.fromisoformat(session['last_daily_claim'])
+            now = datetime.now()
+            # Check if 24 hours have passed since last claim
+            can_claim = (now - last_claim) > timedelta(hours=24)
+            
+        # Calculate time until next reward if can't claim
+        if not can_claim:
+            last_claim = datetime.fromisoformat(session['last_daily_claim'])
+            next_claim = last_claim + timedelta(hours=24)
+            time_left = next_claim - datetime.now()
+            hours_left = int(time_left.total_seconds() // 3600)
+            minutes_left = int((time_left.total_seconds() % 3600) // 60)
+            time_str = f"{hours_left}h {minutes_left}m"
+        else:
+            time_str = "Available now!"
+
+        return jsonify({
+            "can_claim": can_claim,
+            "time_until_next": time_str
+        })
+    except Exception as e:
+        logger.error(f"Error checking daily reward: {e}")
+        return jsonify({"error": "Failed to check daily reward status"}), 500
+
+@app.route('/claim-daily-reward')
+def claim_daily_reward():
+    try:
+        # Check if user already claimed today
+        if 'last_daily_claim' in session:
+            last_claim = datetime.fromisoformat(session['last_daily_claim'])
+            now = datetime.now()
+            if (now - last_claim) < timedelta(hours=24):
+                return jsonify({
+                    "error": "You've already claimed your daily reward today!"
+                }), 400
+
+        # If inventory is full
+        inventory_capacity = 3 + session.get('inventory_upgrade', 0)
+        if len(session.get('inventory', [])) >= inventory_capacity:
+            return jsonify({"error": "Inventory full! Sell items to make space."}), 400
+
+        # Set today as last claim date
+        session['last_daily_claim'] = datetime.now().isoformat()
+        
+        # Apply roll with 1000x luck
+        if 'roll_count' not in session:
+            session['roll_count'] = 0
+        if 'inventory' not in session:
+            session['inventory'] = []
+            
+        session['roll_count'] += 1
+        # Use base luck multiplied by 1000
+        base_luck = calculate_luck(session['roll_count'])
+        daily_luck = base_luck * 1000
+        
+        roll_number = random.randint(1, 100000)
+        result = "Uncommon"  # Default result
+
+        # Apply luck to improve chances
+        for rarity, info in RARITY_TIERS.items():
+            if roll_number <= (100000 / info["chance"]) * daily_luck:
+                result = rarity
+                break
+
+        # Add to inventory
+        session['inventory'].append(result)
+        session.modified = True
+
+        return jsonify({
+            "success": True,
+            "result": result,
+            "color": RARITY_TIERS[result]["color"],
+            "roll_number": roll_number,
+            "luck_applied": daily_luck,
+            "inventory": session['inventory']
+        })
+    except Exception as e:
+        logger.error(f"Error claiming daily reward: {e}")
+        return jsonify({"error": "Failed to claim daily reward"}), 500
 
 if __name__ == '__main__':
     logger.info(f"Starting server on port 5000")

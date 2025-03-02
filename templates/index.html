@@ -1,3 +1,6 @@
+
+<script src="{{ url_for('static', filename='js/daily_rewards.js') }}"></script>
+
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
@@ -189,3 +192,25 @@
     <script src="{{ url_for('static', filename='js/roller.js') }}"></script>
 </body>
 </html>
+<!-- Daily Reward Section -->
+<div class="card mb-3">
+  <div class="card-header bg-success text-white">
+    <h5>Daily Reward</h5>
+  </div>
+  <div class="card-body">
+    <p>Claim your daily reward to get a free roll with x1000 luck bonus!</p>
+    <div id="daily-reward-status">
+      {% if can_claim_daily %}
+        <button id="claim-daily-reward" class="btn btn-success">Claim Daily Reward</button>
+      {% else %}
+        <p>Next reward available in: <span id="daily-countdown">{{ time_until_next }}</span></p>
+      {% endif %}
+    </div>
+    <div id="daily-reward-result" class="mt-3" style="display: none;">
+      <div class="alert alert-success">
+        <h5>You got: <span id="daily-reward-rarity"></span></h5>
+        <p>Applied luck: <span id="daily-reward-luck"></span>x</p>
+      </div>
+    </div>
+  </div>
+</div>
