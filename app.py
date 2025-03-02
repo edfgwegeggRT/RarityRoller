@@ -12,7 +12,6 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 
 RARITY_TIERS = {
-    "LEBRON": {"chance": 25000000, "color": "#6A0DAD", "value": 12500000},  # Purple color
     "Hyperpigmentation": {"chance": 10000000, "color": "#D2B48C", "value": 5000000},  # Tan color
     "Hax": {"chance": 2500000, "color": "#008800", "value": 1000000},  # Dark green (switched from gradient to solid)
     "Secret": {"chance": 1000000, "color": "#FFD700", "value": 500000},  # Gold
@@ -627,23 +626,3 @@ def claim_daily_reward():
 if __name__ == '__main__':
     logger.info(f"Starting server on port 5000")
     app.run(host='0.0.0.0', port=5000, debug=True)
-
-@app.route('/activate-secret-luck')
-def activate_secret_luck():
-    try:
-        response = make_response(jsonify({"success": True}))
-
-        # Check if secret luck was already used
-        if request.cookies.get('used_secret_luck'):
-            return jsonify({"error": "Secret luck already used"}), 400
-
-        # Set secret luck boost for one roll (500000 multiplier)
-        session['rare_luck_boost'] = 500000
-        session.modified = True
-
-        # Set cookie to track usage
-        response.set_cookie('used_secret_luck', 'true', max_age=365*24*60*60)  # 1 year expiry
-        return response
-    except Exception as e:
-        logger.error(f"Error activating secret luck: {e}")
-        return jsonify({"error": "Failed to activate secret luck"}), 500
