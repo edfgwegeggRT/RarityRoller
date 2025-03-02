@@ -1,4 +1,3 @@
-
 // Add event listener for mythical secret button
 document.addEventListener('DOMContentLoaded', function() {
     const mythicalButton = document.getElementById('mythical-secret-button');
@@ -6,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
         mythicalButton.addEventListener('click', function() {
             // Hide the button after click
             this.classList.add('d-none');
-            
+
             // Call the API to activate mythical luck
             fetch('/activate-mythical-luck')
                 .then(response => response.json())
@@ -57,9 +56,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const rareSecretButton = document.getElementById('rare-secret-button'); 
     const legendarySecretButton = document.getElementById('legendary-secret-button');
     const legendarySecretButton2 = document.getElementById('legendary-secret-button2'); 
+    const equipButton = document.getElementById('equip-button'); // Added equip button
 
     let isAutoRolling = false;
     let autoRollInterval;
+    let equippedRarity = null; // Added equipped rarity variable
+
 
     // Sell all functionality
     sellAllButton.addEventListener('click', async function() {
@@ -300,10 +302,18 @@ document.addEventListener('DOMContentLoaded', function() {
             sellButton.dataset.rarity = rarity;
             sellButton.innerHTML = `Sell (${rarityValues[rarity]} <i class="fas fa-coins"></i>)`;
 
+            const equipButton = document.createElement('button'); // Added equip button
+            equipButton.className = 'btn btn-sm btn-outline-primary equip-button';
+            equipButton.dataset.rarity = rarity;
+            equipButton.textContent = 'Equip';
+
             sellButton.addEventListener('click', () => sellItem(rarity));
+            equipButton.addEventListener('click', () => equipItem(rarity)); // Added equip event listener
+
 
             itemDiv.appendChild(badge);
             itemDiv.appendChild(sellButton);
+            itemDiv.appendChild(equipButton); // Added equip button to itemDiv
             inventoryContainer.appendChild(itemDiv);
         });
     }
@@ -600,45 +610,45 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Create main effect
                         const hyperEffect = document.createElement('div');
                         hyperEffect.className = 'hyperpigmentation-effect';
-                        
+
                         const hyperInner = document.createElement('div');
                         hyperInner.className = 'hyperpigmentation-inner';
                         hyperEffect.appendChild(hyperInner);
-                        
+
                         // Add particles for enhanced effect
                         const particlesContainer = document.createElement('div');
                         particlesContainer.className = 'hyperpigmentation-particles';
-                        
+
                         // Create multiple particles with random positions and animations
                         for (let i = 0; i < 20; i++) {
                             const particle = document.createElement('div');
                             particle.className = 'hyperpigmentation-particle';
-                            
+
                             // Random position
                             const randomX = Math.random() * 100;
                             const randomY = Math.random() * 100;
                             particle.style.left = `${randomX}%`;
                             particle.style.top = `${randomY}%`;
-                            
+
                             // Random size
                             const randomSize = Math.random() * 15 + 5;
                             particle.style.width = `${randomSize}px`;
                             particle.style.height = `${randomSize}px`;
-                            
+
                             // Random animation
                             const randomDuration = Math.random() * 3 + 2;
                             const randomDelay = Math.random() * 2;
                             particle.style.animation = `hyperpigmentation-pulse ${randomDuration}s infinite ${randomDelay}s`;
-                            
+
                             particlesContainer.appendChild(particle);
                         }
-                        
+
                         hyperEffect.appendChild(particlesContainer);
                         document.body.appendChild(hyperEffect);
-                        
+
                         // Add text flash effect
                         rarityText.style.textShadow = `0 0 15px ${data.color}, 0 0 25px ${data.color}, 0 0 35px ${data.color}`;
-                        
+
                         // Remove effect after animation
                         setTimeout(() => {
                             hyperEffect.remove();
@@ -718,7 +728,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     // Add mythic animation to the text
                     rarityText.classList.add('mythic-animation');
-                    
+
                     // Check if the result is Mythical to show the secret button
                     if (data.result === 'Mythical') {
                         // Show the mythical secret button
@@ -796,7 +806,7 @@ document.addEventListener('DOMContentLoaded', function() {
         rarityText.style.color = color;
 
         // Show special buttons based on rarity
-        if (result === 'Secret') {
+        if (result === ''Secret') {
             secretButton.classList.remove('d-none');
         } else if (result === 'Good') {
             goodSecretButton.classList.remove('d-none');
@@ -892,4 +902,115 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error activating legendary luck 2:', error);
         }
     });
+
+    async function equipItem(rarity) {
+        try {
+            const response = await fetch(`/equip/${rarity}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                equippedRarity = rarity; // Update equipped rarity
+                updateInventoryDisplay(data.inventory); //Refresh inventory display
+
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `${rarity} equipped!`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+
+                // Add animation if rarity is Mythical or better
+                const highRarities = ['Mythical', 'Jack Attack', 'Ancient', 'Secret', 'Hax', 'Special', 'Chill', 'Hyperpigmentation'];
+                if (highRarities.includes(rarity)) {
+                    addAnimation(rarity);
+                }
+
+            } else {
+                console.error('Failed to equip item:', data.error);
+            }
+        } catch (error) {
+            console.error('Error equipping item:', error);
+        }
+    }
+
+
+    function addAnimation(rarity) {
+        const animation = document.createElement('div');
+        animation.className = 'equipped-animation';
+        animation.style.backgroundImage = `url('images/${rarity}.gif')`; // Assumes GIFs exist
+        document.body.appendChild(animation);
+
+        // Remove animation on unequip
+        animation.addEventListener('animationend', () => {
+          animation.remove();
+        });
+
+        // Add event listener for unequip
+        const unequipButton = document.createElement('button');
+        unequipButton.className = 'btn btn-sm btn-outline-danger unequip-button';
+        unequipButton.textContent = 'Unequip';
+        unequipButton.addEventListener('click', () => unequipItem(rarity, animation));
+        document.body.appendChild(unequipButton); // Add unequip button to the document
+    }
+
+
+    async function unequipItem(rarity, animation) {
+      try {
+        const response = await fetch(`/unequip/${rarity}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          equippedRarity = null; // Reset equipped rarity
+          updateInventoryDisplay(data.inventory); // Refresh inventory display
+
+          // Remove animation
+          animation.remove();
+
+          // Show success message
+          const notification = document.createElement('div');
+          notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+          notification.textContent = `${rarity} unequipped!`;
+          document.body.appendChild(notification);
+          setTimeout(() => notification.remove(), 2000);
+        } else {
+          console.error('Failed to unequip item:', data.error);
+        }
+      } catch (error) {
+        console.error('Error unequipping item:', error);
+      }
+    }
 });
+
+
+// Placeholder for rarity colors and values (replace with your actual data)
+const rarityColors = {
+    'Uncommon': 'lightblue',
+    'Good': 'lightgreen',
+    'Epic': 'purple',
+    'Divine': 'gold',
+    'Legendary': 'orange',
+    'Mythical': 'pink',
+    'Jack Attack': 'red',
+    'Ancient': 'brown',
+    'Secret': 'gray',
+    'Hax': 'teal',
+    'Special': 'lime',
+    'Chill': 'cyan',
+    'Hyperpigmentation': 'magenta'
+};
+
+const rarityValues = {
+    'Uncommon': 10,
+    'Good': 50,
+    'Epic': 250,
+    'Divine': 1250,
+    'Legendary': 6250,
+    'Mythical': 31250,
+    'Jack Attack': 100000,
+    'Ancient': 500000,
+    'Secret': 2500000,
+    'Hax': 10000000,
+    'Special': 50000000,
+    'Chill': 250000000,
+    'Hyperpigmentation': 1000000000
+};

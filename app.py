@@ -44,6 +44,8 @@ def index():
             session['inventory_upgrade'] = 0
         if 'auto_sell_settings' not in session:
             session['auto_sell_settings'] = {rarity: False for rarity in RARITY_TIERS}
+        if 'equipped_rarity' not in session:
+            session['equipped_rarity'] = None
 
         return render_template('index.html', 
                              rarity_tiers=RARITY_TIERS, 
@@ -55,7 +57,8 @@ def index():
                              purchased_luck=session['purchased_luck'],
                              inventory_capacity=3 + session.get('inventory_upgrade', 0),
                              inventory_upgrade=session.get('inventory_upgrade', 0),
-                             auto_sell_settings=session.get('auto_sell_settings', {}))
+                             auto_sell_settings=session.get('auto_sell_settings', {}),
+                             equipped_rarity=session.get('equipped_rarity'))
     except Exception as e:
         logger.error(f"Error rendering index: {e}")
         return "An error occurred", 500
@@ -498,6 +501,40 @@ def reset_cookies():
         logger.error(f"Error resetting cookies: {e}")
         return jsonify({"error": "Failed to reset cookies"}), 500
 
+@app.route('/equip/<rarity>')
+def equip_item(rarity):
+    try:
+        if 'equipped_rarity' not in session:
+            session['equipped_rarity'] = None
+
+        if rarity not in session['inventory']:
+            return jsonify({"error": "Item not in inventory"}), 400
+
+        # Store the equipped rarity
+        session['equipped_rarity'] = rarity
+        session.modified = True
+        
+        return jsonify({
+            "success": True,
+            "equipped_rarity": rarity
+        })
+    except Exception as e:
+        logger.error(f"Error equipping item: {e}")
+        return jsonify({"error": "Failed to equip item"}), 500
+
+@app.route('/unequip')
+def unequip_item():
+    try:
+        session['equipped_rarity'] = None
+        session.modified = True
+        
+        return jsonify({
+            "success": True
+        })
+    except Exception as e:
+        logger.error(f"Error unequipping item: {e}")
+        return jsonify({"error": "Failed to unequip item"}), 500
+
 @app.route('/reset-all')
 def reset_all():
     try:
@@ -508,6 +545,7 @@ def reset_all():
         session['permanent_luck'] = 0 #added to reset permanent luck
         session['inventory'] = []
         session['inventory_upgrade'] = 0
+        session['equipped_rarity'] = None
         session.modified = True
         logger.info(f"Reset stats - luck set to exactly 0")
         return jsonify({
