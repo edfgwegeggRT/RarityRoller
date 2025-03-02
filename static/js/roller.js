@@ -1,4 +1,3 @@
-
 // Add event listener for mythical secret button
 document.addEventListener('DOMContentLoaded', function() {
     const mythicalButton = document.getElementById('mythical-secret-button');
@@ -580,7 +579,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Check for high-rarity rolls and apply special effects
-                const highRarities = ['Hyperpigmentation', 'Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret', 'Hax', 'Special', 'Chill']; 
+                const highRarities = ['Hyperpigmentation', 'Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret', 'Hax', 'Special', 'Chill', 'LEBRON']; 
                 if (highRarities.includes(data.result)) {
                     // Create supernova effect
                     const supernova = document.createElement('div');
@@ -595,8 +594,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     document.body.appendChild(supernova);
 
+                    // Create special animation for LEBRON rarity
+                    if (data.result === 'LEBRON') {
+                        const lebronEffect = document.createElement('div');
+                        lebronEffect.className = 'lebron-effect';
+                        document.body.appendChild(lebronEffect);
+
+                        // Initial LEBRONNNN explosion
+                        rarityText.textContent = 'LEBRONNNN';
+                        createExplosion();
+
+                        // Sequence of explosions with "b"s
+                        setTimeout(() => {
+                            const bSequence = async () => {
+                                for(let i = 0; i < 3; i++) {
+                                    rarityText.textContent = 'b';
+                                    createExplosion();
+                                    await new Promise(resolve => setTimeout(resolve, 200));
+                                }
+                                // Final boom
+                                rarityText.textContent = 'boom!';
+                                createExplosion();
+                            };
+                            bSequence();
+                        }, 1000);
+
+                        // Remove effect after animation
+                        setTimeout(() => {
+                            lebronEffect.remove();
+                            rarityText.textContent = 'LEBRON';
+                        }, 3000);
+                    }
                     // Create special animation for Hyperpigmentation rarity
-                    if (data.result === 'Hyperpigmentation') {
+                    else if (data.result === 'Hyperpigmentation') {
                         // Create main effect
                         const hyperEffect = document.createElement('div');
                         hyperEffect.className = 'hyperpigmentation-effect';
@@ -893,3 +923,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function createExplosion() {
+    const explosion = document.createElement('div');
+    explosion.className = 'explosion';
+    document.body.appendChild(explosion);
+    setTimeout(() => explosion.remove(), 500); // Adjust duration as needed
+}
