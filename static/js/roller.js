@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Check for high-rarity rolls and apply special effects
-                const highRarities = ['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret', 'Hax', 'Special', 'Chill']; 
+                const highRarities = ['Hyperpigmentation', 'Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret', 'Hax', 'Special', 'Chill']; 
                 if (highRarities.includes(data.result)) {
                     // Create supernova effect
                     const supernova = document.createElement('div');
@@ -595,8 +595,58 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     document.body.appendChild(supernova);
 
+                    // Create special animation for Hyperpigmentation rarity
+                    if (data.result === 'Hyperpigmentation') {
+                        // Create main effect
+                        const hyperEffect = document.createElement('div');
+                        hyperEffect.className = 'hyperpigmentation-effect';
+                        
+                        const hyperInner = document.createElement('div');
+                        hyperInner.className = 'hyperpigmentation-inner';
+                        hyperEffect.appendChild(hyperInner);
+                        
+                        // Add particles for enhanced effect
+                        const particlesContainer = document.createElement('div');
+                        particlesContainer.className = 'hyperpigmentation-particles';
+                        
+                        // Create multiple particles with random positions and animations
+                        for (let i = 0; i < 20; i++) {
+                            const particle = document.createElement('div');
+                            particle.className = 'hyperpigmentation-particle';
+                            
+                            // Random position
+                            const randomX = Math.random() * 100;
+                            const randomY = Math.random() * 100;
+                            particle.style.left = `${randomX}%`;
+                            particle.style.top = `${randomY}%`;
+                            
+                            // Random size
+                            const randomSize = Math.random() * 15 + 5;
+                            particle.style.width = `${randomSize}px`;
+                            particle.style.height = `${randomSize}px`;
+                            
+                            // Random animation
+                            const randomDuration = Math.random() * 3 + 2;
+                            const randomDelay = Math.random() * 2;
+                            particle.style.animation = `hyperpigmentation-pulse ${randomDuration}s infinite ${randomDelay}s`;
+                            
+                            particlesContainer.appendChild(particle);
+                        }
+                        
+                        hyperEffect.appendChild(particlesContainer);
+                        document.body.appendChild(hyperEffect);
+                        
+                        // Add text flash effect
+                        rarityText.style.textShadow = `0 0 15px ${data.color}, 0 0 25px ${data.color}, 0 0 35px ${data.color}`;
+                        
+                        // Remove effect after animation
+                        setTimeout(() => {
+                            hyperEffect.remove();
+                            rarityText.style.textShadow = '';
+                        }, 5000); // Longer duration for this special effect
+                    }
                     // Create special animation for Hax rarity
-                    if (data.result === 'Hax') {
+                    else if (data.result === 'Hax') {
                         const haxEffect = document.createElement('div');
                         haxEffect.className = 'hax-effect';
 
