@@ -440,6 +440,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     supernova.className = 'supernova';
                     supernova.style.background = `radial-gradient(circle, ${data.color}66 0%, ${data.color}33 50%, transparent 70%)`;
                     document.body.appendChild(supernova);
+                    
+                    // Create rotating star effect for Ancient or better rarities
+                    if (['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret'].includes(data.result)) {
+                        const star = document.createElement('div');
+                        star.className = 'star-effect';
+                        
+                        const starInner = document.createElement('div');
+                        starInner.className = 'star-inner';
+                        starInner.style.backgroundColor = data.color;
+                        
+                        star.appendChild(starInner);
+                        document.body.appendChild(star);
+                        
+                        // Remove star after animation
+                        setTimeout(() => {
+                            star.remove();
+                        }, 2000);
+                    }
 
                     // Remove supernova after animation
                     setTimeout(() => {

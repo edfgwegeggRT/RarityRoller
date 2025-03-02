@@ -199,3 +199,31 @@
         opacity: 0.8;
     }
 }
+/* Star animation for high rarity items */
+@keyframes rotate-star {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+    opacity: 0.3;
+  }
+}
+
+.star-effect {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  pointer-events: none;
+  z-index: 1000;
+  animation: rotate-star 2s linear infinite;
+}
+
+.star-inner {
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
