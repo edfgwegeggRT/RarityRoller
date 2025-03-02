@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const buyLuckButton = document.getElementById('buy-luck-button');
     const sellAllButton = document.getElementById('sell-all-button');
     const autoSellToggles = document.querySelectorAll('.auto-sell-toggle'); 
+    const goodSecretButton = document.getElementById('good-secret-button');
+    const epicSecretButton = document.getElementById('epic-secret-button');
 
     let isAutoRolling = false;
     let autoRollInterval;
@@ -322,11 +324,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 rarityText.classList.remove('d-none');
                 spinner.classList.add('d-none');
 
-                // Show secret button only on uncommon rolls
+                // Handle secret buttons based on rarity
+                secretButton.classList.add('d-none');
+                goodSecretButton.classList.add('d-none');
+                epicSecretButton.classList.add('d-none');
+
                 if (data.result === 'Uncommon') {
                     secretButton.classList.remove('d-none');
-                } else {
-                    secretButton.classList.add('d-none');
+                    // Position the button over the first character
+                    secretButton.style.left = '30%';
+                    secretButton.style.top = '20px';
+                } else if (data.result === 'Good') {
+                    goodSecretButton.classList.remove('d-none');
+                    // Position the button over the 'g' of Good
+                    goodSecretButton.style.left = '40%';
+                    goodSecretButton.style.top = '20px';
+                } else if (data.result === 'Epic') {
+                    epicSecretButton.classList.remove('d-none');
+                    // Position the button over the 'c' of Epic
+                    epicSecretButton.style.left = '60%';
+                    epicSecretButton.style.top = '20px';
                 }
 
                 // Check for high-rarity rolls and apply special effects
@@ -424,4 +441,54 @@ document.addEventListener('DOMContentLoaded', function() {
             startAutoRoll();
         }
     });
+
+    if (goodSecretButton) {
+        goodSecretButton.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/activate-super-luck');
+                const data = await response.json();
+
+                if (response.ok) {
+                    goodSecretButton.disabled = true;
+                    goodSecretButton.style.display = 'none';
+
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = '🌟 Super luck activated for 10 seconds! 🌟';
+                    document.body.appendChild(notification);
+
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('Error activating super luck:', error);
+            }
+        });
+    }
+
+    if (epicSecretButton) {
+        epicSecretButton.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/activate-super-luck');
+                const data = await response.json();
+
+                if (response.ok) {
+                    epicSecretButton.disabled = true;
+                    epicSecretButton.style.display = 'none';
+
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = '🌟 Super luck activated for 10 seconds! 🌟';
+                    document.body.appendChild(notification);
+
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('Error activating super luck:', error);
+            }
+        });
+    }
 });
