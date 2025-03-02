@@ -294,24 +294,29 @@ def roll():
         luck = calculate_luck(session['roll_count'])
         logger.debug(f"Rolling with luck multiplier: {luck}")
 
-        # Modified roll calculation for better handling of high luck values
-        roll_number = random.randint(1, 100000)
-        result = "Uncommon"  # Default result
+        # Check for guaranteed LEBRON first
+        if session.get('guaranteed_lebron'):
+            result = "LEBRON"
+            # Remove the guaranteed flag after use
+            session.pop('guaranteed_lebron', None)
+        else:
+            # Normal roll calculation
+            roll_number = random.randint(1, 100000)
+            result = "Uncommon"  # Default result
 
-        # Apply luck to improve chances - with better handling for extremely high luck values
-        for rarity, info in RARITY_TIERS.items():
-            # Calculate effective chance with luck
-            effective_chance = min(100000, (100000 / info["chance"]) * luck)
+            # Apply luck to improve chances
+            for rarity, info in RARITY_TIERS.items():
+                # Calculate effective chance with luck
+                effective_chance = min(100000, (100000 / info["chance"]) * luck)
 
-            # For extremely high luck values, guarantee the highest possible rarity
-            if luck >= 1000000:  # If luck is extremely high
-                if rarity == "LEBRON":
+                # For extremely high luck values, guarantee the highest possible rarity
+                if luck >= 500000:  # If luck is extremely high (mythical luck threshold)
+                    result = "LEBRON"  # Guarantee LEBRON rarity
+                    break
+                # For high but not extreme luck, use proper probability scaling
+                elif roll_number <= effective_chance:
                     result = rarity
                     break
-            # For high but not extreme luck, use proper probability scaling
-            elif roll_number <= effective_chance:
-                result = rarity
-                break
 
         # Check if this rarity should be auto-sold
         auto_sold = False
@@ -329,7 +334,6 @@ def roll():
         response = {
             "result": result,
             "color": RARITY_TIERS[result]["color"],
-            "roll_number": roll_number,
             "roll_count": session['roll_count'],
             "luck_bonus": luck,
             "can_auto_roll": session['roll_count'] >= 50,
@@ -529,8 +533,6 @@ def activate_mythical_luck():
         logger.error(f"Error activating mythical luck: {e}")
         return jsonify({"error": "Failed to activate mythical luck"}), 500
 
-
-
 @app.route('/reset-cookies')
 def reset_cookies():
     try:
@@ -545,6 +547,7 @@ def reset_cookies():
         response.delete_cookie('used_legendary_luck')
         response.delete_cookie('used_legendary_luck2')
         response.delete_cookie('used_mythical_luck')
+        response.delete_cookie('used_lebron_luck') #added to reset lebron luck cookie
         return response
     except Exception as e:
         logger.error(f"Error resetting cookies: {e}")
@@ -660,6 +663,26 @@ def claim_daily_reward():
         logger.error(f"Error claiming daily reward: {e}")
         return jsonify({"error": "Failed to claim daily reward"}), 500
 
+
+@app.route('/activate-lebron-luck')
+def activate_lebron_luck():
+    try:
+        response = make_response(jsonify({"success": True}))
+
+        # Check if LEBRON luck was already used
+        if request.cookies.get('used_lebron_luck'):
+            return jsonify({"error": "LEBRON luck already used"}), 400
+
+        # Set guaranteed LEBRON flag for next roll
+        session['guaranteed_lebron'] = True
+        session.modified = True
+
+        # Set cookie to track usage
+        response.set_cookie('used_lebron_luck', 'true', max_age=365 * 24 * 60 * 60)  # 1 year expiry
+        return response
+    except Exception as e:
+        logger.error(f"Error activating LEBRON luck: {e}")
+        return jsonify({"error": "Failed to activate LEBRON luck"}), 500
 
 if __name__ == '__main__':
     logger.info(f"Starting server on port 5000")
