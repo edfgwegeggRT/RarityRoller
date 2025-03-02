@@ -282,11 +282,15 @@ def roll():
         roll_number = random.randint(1, 100000)
         result = "Uncommon"  # Default result
 
-        # Apply luck to improve chances
+        # Get all matching rarities based on luck and pick the rarest one
+        matching_rarities = []
         for rarity, info in RARITY_TIERS.items():
             if roll_number <= (100000 / info["chance"]) * luck:
-                result = rarity
-                break
+                matching_rarities.append(rarity)
+        
+        # If we have matches, pick the rarest one (first in RARITY_TIERS since it's ordered by rarity)
+        if matching_rarities:
+            result = matching_rarities[0]
 
         # Check if this rarity should be auto-sold
         auto_sold = False
