@@ -1,4 +1,3 @@
-
 // Add event listener for mythical secret button
 document.addEventListener('DOMContentLoaded', function() {
     const mythicalButton = document.getElementById('mythical-secret-button');
@@ -6,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
         mythicalButton.addEventListener('click', function() {
             // Hide the button after click
             this.classList.add('d-none');
-            
+
             // Call the API to activate mythical luck
             fetch('/activate-mythical-luck')
                 .then(response => response.json())
@@ -57,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const rareSecretButton = document.getElementById('rare-secret-button'); 
     const legendarySecretButton = document.getElementById('legendary-secret-button');
     const legendarySecretButton2 = document.getElementById('legendary-secret-button2'); 
+    const secretRarityButton = document.getElementById('secret-rarity-button'); // Added
 
     let isAutoRolling = false;
     let autoRollInterval;
@@ -537,6 +537,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 rareSecretButton.classList.add('d-none'); 
                 legendarySecretButton.classList.add('d-none');
                 legendarySecretButton2.classList.add('d-none');
+                secretRarityButton.classList.add('d-none'); // Added
 
                 if (data.result === 'Uncommon') {
                     secretButton.classList.remove('d-none');
@@ -577,6 +578,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Position the button over the 'i' of Divine
                     rareSecretButton.style.left = '45%';
                     rareSecretButton.style.top = '20px';
+                } else if (data.result === 'Secret') { // Added
+                    secretRarityButton.classList.remove('d-none');
+                    // Position the button appropriately
+                    secretRarityButton.style.left = '45%';
+                    secretRarityButton.style.top = '20px';
                 }
 
                 // Check for high-rarity rolls and apply special effects
@@ -600,45 +606,45 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Create main effect
                         const hyperEffect = document.createElement('div');
                         hyperEffect.className = 'hyperpigmentation-effect';
-                        
+
                         const hyperInner = document.createElement('div');
                         hyperInner.className = 'hyperpigmentation-inner';
                         hyperEffect.appendChild(hyperInner);
-                        
+
                         // Add particles for enhanced effect
                         const particlesContainer = document.createElement('div');
                         particlesContainer.className = 'hyperpigmentation-particles';
-                        
+
                         // Create multiple particles with random positions and animations
                         for (let i = 0; i < 20; i++) {
                             const particle = document.createElement('div');
                             particle.className = 'hyperpigmentation-particle';
-                            
+
                             // Random position
                             const randomX = Math.random() * 100;
                             const randomY = Math.random() * 100;
                             particle.style.left = `${randomX}%`;
                             particle.style.top = `${randomY}%`;
-                            
+
                             // Random size
                             const randomSize = Math.random() * 15 + 5;
                             particle.style.width = `${randomSize}px`;
                             particle.style.height = `${randomSize}px`;
-                            
+
                             // Random animation
                             const randomDuration = Math.random() * 3 + 2;
                             const randomDelay = Math.random() * 2;
                             particle.style.animation = `hyperpigmentation-pulse ${randomDuration}s infinite ${randomDelay}s`;
-                            
+
                             particlesContainer.appendChild(particle);
                         }
-                        
+
                         hyperEffect.appendChild(particlesContainer);
                         document.body.appendChild(hyperEffect);
-                        
+
                         // Add text flash effect
                         rarityText.style.textShadow = `0 0 15px ${data.color}, 0 0 25px ${data.color}, 0 0 35px ${data.color}`;
-                        
+
                         // Remove effect after animation
                         setTimeout(() => {
                             hyperEffect.remove();
@@ -726,7 +732,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Add mythic animation to the text for other results
                         rarityText.classList.add('mythic-animation');
                     }
-                    
+
                     // Check if the result is Mythical to show the secret button
                     if (data.result === 'Mythical') {
                         // Show the mythical secret button
@@ -799,13 +805,14 @@ document.addEventListener('DOMContentLoaded', function() {
         rareSecretButton.classList.add('d-none');
         legendarySecretButton.classList.add('d-none');
         legendarySecretButton2.classList.add('d-none');
+        secretRarityButton.classList.add('d-none'); // Added
 
         rarityText.textContent = result;
         rarityText.style.color = color;
 
         // Show special buttons based on rarity
         if (result === 'Secret') {
-            secretButton.classList.remove('d-none');
+            secretRarityButton.classList.remove('d-none');
         } else if (result === 'Good') {
             goodSecretButton.classList.remove('d-none');
         } else if (result === 'Epic') {
@@ -900,4 +907,32 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error activating legendary luck 2:', error);
         }
     });
+
+    //Secret Rarity Button Functionality
+    if (secretRarityButton) {
+        secretRarityButton.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/activate-secret-luck');
+                const data = await response.json();
+
+                if (response.ok) {
+                    secretRarityButton.disabled = true;
+                    secretRarityButton.style.display = 'none';
+
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = '🍀 x500000 Luck boost activated for 1 roll! 🍀';
+                    document.body.appendChild(notification);
+
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
+                } else {
+                    console.error('Failed to activate secret luck:', data.error);
+                }
+            } catch (error) {
+                console.error('Error activating secret luck:', error);
+            }
+        });
+    }
 });
