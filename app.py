@@ -48,7 +48,7 @@ def index():
                              inventory=session['inventory'],
                              coins=session['coins'],
                              purchased_luck=session['purchased_luck'],
-                             inventory_capacity=20 + session.get('inventory_upgrade', 0),
+                             inventory_capacity=3 + session.get('inventory_upgrade', 0),
                              inventory_upgrade=session.get('inventory_upgrade', 0),
                              auto_sell_settings=session.get('auto_sell_settings', {}))
     except Exception as e:
@@ -137,6 +137,7 @@ def buy_max_luck():
             return jsonify({"error": "Not enough coins to buy any luck"}), 400
 
         session.modified = True
+        next_cost = round(50 * (2.5 ** session['purchased_luck']))
         return jsonify({
             "success": True,
             "levels_purchased": purchased_levels,
@@ -144,7 +145,7 @@ def buy_max_luck():
             "coins": session['coins'],
             "purchased_luck": session['purchased_luck'],
             "total_luck": calculate_luck(session['roll_count']),
-            "next_cost": round(50 * (2.5 ** session['purchased_luck'])) if session['coins'] > 0 else "Not enough coins"
+            "next_cost": next_cost
         })
     except Exception as e:
         logger.error(f"Error buying max luck: {e}")
@@ -228,7 +229,7 @@ def roll():
             session['auto_sell_settings'] = {rarity: False for rarity in RARITY_TIERS}
 
         # Check inventory size with upgraded capacity
-        inventory_capacity = 20 + session.get('inventory_upgrade', 0)
+        inventory_capacity = 3 + session.get('inventory_upgrade', 0)
         if len(session['inventory']) >= inventory_capacity:
             return jsonify({"error": "Inventory full! Sell items to make space."}), 400
 
