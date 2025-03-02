@@ -16,8 +16,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const epicSecretButton = document.getElementById('epic-secret-button');
     const epicSecretButton2 = document.getElementById('epic-secret-button2');
     const divineSecretButton = document.getElementById('divine-secret-button');
+    const divineSecretButton2 = document.getElementById('divine-secret-button2');
     const rareSecretButton = document.getElementById('rare-secret-button'); 
-    const legendaryButton = document.getElementById('legendary-button'); 
+    const legendarySecretButton = document.getElementById('legendary-secret-button');
+    const legendarySecretButton2 = document.getElementById('legendary-secret-button2'); 
 
     let isAutoRolling = false;
     let autoRollInterval;
@@ -184,6 +186,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Error activating divine luck:', error);
+            }
+        });
+    }
+
+    if (divineSecretButton2) {
+        divineSecretButton2.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/activate-divine-luck2'); // Added new route
+                const data = await response.json();
+
+                if (response.ok) {
+                    divineSecretButton2.disabled = true;
+                    divineSecretButton2.style.display = 'none';
+
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = '🌟 Permanent +75 luck bonus activated! 🌟'; // Different bonus
+                    document.body.appendChild(notification);
+
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
+                } else {
+                    console.error('Failed to activate divine luck 2:', data.error);
+                }
+            } catch (error) {
+                console.error('Error activating divine luck 2:', error);
             }
         });
     }
@@ -467,7 +496,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 epicSecretButton.classList.add('d-none');
                 epicSecretButton2.classList.add('d-none');
                 divineSecretButton.classList.add('d-none');
+                divineSecretButton2.classList.add('d-none');
                 rareSecretButton.classList.add('d-none'); 
+                legendarySecretButton.classList.add('d-none');
+                legendarySecretButton2.classList.add('d-none');
 
                 if (data.result === 'Uncommon') {
                     secretButton.classList.remove('d-none');
@@ -489,9 +521,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     epicSecretButton2.style.top = '20px';
                 } else if (data.result === 'Divine') {
                     divineSecretButton.classList.remove('d-none');
-                    // Position the button over the 'i' of Divine
-                    divineSecretButton.style.left = '45%';
+                    divineSecretButton2.classList.remove('d-none');
+                    // Position the buttons on either side of Divine
+                    divineSecretButton.style.left = '40%';
                     divineSecretButton.style.top = '20px';
+                    divineSecretButton2.style.left = '60%';
+                    divineSecretButton2.style.top = '20px';
+                } else if (data.result === 'Legendary') {
+                    legendarySecretButton.classList.remove('d-none');
+                    legendarySecretButton2.classList.remove('d-none');
+                    // Position the buttons on either side of Legendary
+                    legendarySecretButton.style.left = '35%';
+                    legendarySecretButton.style.top = '20px';
+                    legendarySecretButton2.style.left = '65%';
+                    legendarySecretButton2.style.top = '20px';
                 } else if (data.result === 'Rare') {
                     rareSecretButton.classList.remove('d-none');
                     // Position the button over the 'i' of Divine
@@ -648,7 +691,10 @@ document.addEventListener('DOMContentLoaded', function() {
         epicSecretButton.classList.add('d-none');
         epicSecretButton2.classList.add('d-none');
         divineSecretButton.classList.add('d-none');
+        divineSecretButton2.classList.add('d-none');
         rareSecretButton.classList.add('d-none');
+        legendarySecretButton.classList.add('d-none');
+        legendarySecretButton2.classList.add('d-none');
 
         rarityText.textContent = result;
         rarityText.style.color = color;
@@ -663,6 +709,10 @@ document.addEventListener('DOMContentLoaded', function() {
             epicSecretButton2.classList.remove('d-none');
         } else if (result === 'Divine') {
             divineSecretButton.classList.remove('d-none');
+            divineSecretButton2.classList.remove('d-none');
+        } else if (result === 'Legendary') {
+            legendarySecretButton.classList.remove('d-none');
+            legendarySecretButton2.classList.remove('d-none');
         } else if (result === 'Rare') {
             rareSecretButton.classList.remove('d-none');
         }
@@ -697,27 +747,53 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Legendary Button Functionality
-    legendaryButton.addEventListener('click', async function() {
+    legendarySecretButton.addEventListener('click', async function() {
         try {
-            const response = await fetch('/roll/legendary'); 
+            const response = await fetch('/activate-legendary-luck');
             const data = await response.json();
 
             if (response.ok) {
-                // Update displays similar to regular roll
-                rollCountDisplay.textContent = data.roll_count;
-                luckBonusDisplay.textContent = data.luck_bonus + 'x';
-                updateInventoryDisplay(data.inventory);
-                coinCountDisplay.textContent = data.coins;
-                rarityText.textContent = data.result;
-                rarityText.style.color = data.color;
-                // Add animation and sound effects as needed
+                legendarySecretButton.disabled = true;
+                legendarySecretButton.style.display = 'none';
+
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = '🌟 10,000x luck bonus for next roll activated! 🌟';
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
             } else {
-                // Handle error
-                console.error("Error performing legendary roll:", data.error);
-                // Display error message
+                console.error('Failed to activate legendary luck:', data.error);
             }
         } catch (error) {
-            console.error('Error performing legendary roll:', error);
+            console.error('Error activating legendary luck:', error);
+        }
+    });
+
+    legendarySecretButton2.addEventListener('click', async function() {
+        try {
+            const response = await fetch('/activate-legendary-luck2');
+            const data = await response.json();
+
+            if (response.ok) {
+                legendarySecretButton2.disabled = true;
+                legendarySecretButton2.style.display = 'none';
+
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = '⚡ 15,000x luck bonus for next roll activated! ⚡';
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            } else {
+                console.error('Failed to activate legendary luck 2:', data.error);
+            }
+        } catch (error) {
+            console.error('Error activating legendary luck 2:', error);
         }
     });
 });

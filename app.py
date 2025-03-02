@@ -377,6 +377,26 @@ def activate_divine_luck():
         logger.error(f"Error activating divine luck: {e}")
         return jsonify({"error": "Failed to activate divine luck"}), 500
         
+@app.route('/activate-divine-luck2')
+def activate_divine_luck2():
+    try:
+        response = make_response(jsonify({"success": True}))
+
+        # Check if divine luck 2 was already used
+        if request.cookies.get('used_divine_luck2'):
+            return jsonify({"error": "Divine luck 2 already used"}), 400
+
+        # Add permanent luck bonus (75 for the second divine button)
+        session['permanent_luck'] = session.get('permanent_luck', 0) + 75
+        session.modified = True
+
+        # Set cookie to track usage
+        response.set_cookie('used_divine_luck2', 'true', max_age=365*24*60*60)  # 1 year expiry
+        return response
+    except Exception as e:
+        logger.error(f"Error activating divine luck 2: {e}")
+        return jsonify({"error": "Failed to activate divine luck 2"}), 500
+        
 @app.route('/activate-rare-luck')
 def activate_rare_luck():
     try:
@@ -417,6 +437,26 @@ def activate_legendary_luck():
         logger.error(f"Error activating legendary luck: {e}")
         return jsonify({"error": "Failed to activate legendary luck"}), 500
 
+@app.route('/activate-legendary-luck2')
+def activate_legendary_luck2():
+    try:
+        response = make_response(jsonify({"success": True}))
+
+        # Check if legendary luck 2 was already used
+        if request.cookies.get('used_legendary_luck2'):
+            return jsonify({"error": "Legendary luck 2 already used"}), 400
+
+        # Set legendary luck boost for one roll (15000 for second legendary button)
+        session['rare_luck_boost'] = 15000
+        session.modified = True
+
+        # Set cookie to track usage
+        response.set_cookie('used_legendary_luck2', 'true', max_age=365*24*60*60)  # 1 year expiry
+        return response
+    except Exception as e:
+        logger.error(f"Error activating legendary luck 2: {e}")
+        return jsonify({"error": "Failed to activate legendary luck 2"}), 500
+
 
 @app.route('/reset-cookies')
 def reset_cookies():
@@ -427,8 +467,10 @@ def reset_cookies():
         response.delete_cookie('used_super_luck_good')
         response.delete_cookie('used_super_luck_epic')
         response.delete_cookie('used_divine_luck')
+        response.delete_cookie('used_divine_luck2')
         response.delete_cookie('used_rare_luck')
         response.delete_cookie('used_legendary_luck')
+        response.delete_cookie('used_legendary_luck2')
         return response
     except Exception as e:
         logger.error(f"Error resetting cookies: {e}")
