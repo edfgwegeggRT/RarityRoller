@@ -13,8 +13,8 @@ app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 
 RARITY_TIERS = {
     "Hax": {"chance": 2500000, "color": "#008800", "value": 1000000},  # Dark green (switched from gradient to solid)
-    "Special": {"chance": 500000, "color": "#87CEEB", "value": 250000},  # Chill blue
     "Secret": {"chance": 1000000, "color": "#FFD700", "value": 500000},  # Gold
+    "Special": {"chance": 500000, "color": "#87CEEB", "value": 250000},  # Chill blue
     "Ancient": {"chance": 100000, "color": "#4B0082", "value": 50000},  # Indigo
     "Jack Attack": {"chance": 50000, "color": "#008000", "value": 25000},  # Green
     "Mythical": {"chance": 10000, "color": "#FF0000", "value": 5000},  # Red
@@ -457,6 +457,26 @@ def activate_legendary_luck2():
         logger.error(f"Error activating legendary luck 2: {e}")
         return jsonify({"error": "Failed to activate legendary luck 2"}), 500
 
+@app.route('/activate-mythical-luck')
+def activate_mythical_luck():
+    try:
+        response = make_response(jsonify({"success": True}))
+
+        # Check if mythical luck was already used
+        if request.cookies.get('used_mythical_luck'):
+            return jsonify({"error": "Mythical luck already used"}), 400
+
+        # Set mythical luck boost for one roll (500000 multiplier)
+        session['rare_luck_boost'] = 500000
+        session.modified = True
+
+        # Set cookie to track usage
+        response.set_cookie('used_mythical_luck', 'true', max_age=365*24*60*60)  # 1 year expiry
+        return response
+    except Exception as e:
+        logger.error(f"Error activating mythical luck: {e}")
+        return jsonify({"error": "Failed to activate mythical luck"}), 500
+
 
 @app.route('/reset-cookies')
 def reset_cookies():
@@ -471,6 +491,7 @@ def reset_cookies():
         response.delete_cookie('used_rare_luck')
         response.delete_cookie('used_legendary_luck')
         response.delete_cookie('used_legendary_luck2')
+        response.delete_cookie('used_mythical_luck')
         return response
     except Exception as e:
         logger.error(f"Error resetting cookies: {e}")
