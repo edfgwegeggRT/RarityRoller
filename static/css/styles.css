@@ -380,3 +380,55 @@
   background-color: #87CEEB;
   clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%, 50% 0%, 50% 100%, 0% 50%, 100% 50%);
 }
+
+/* LEBRON animation effects */
+.lebron-effect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(128, 0, 128, 0.2); /* Purple background with transparency */
+    pointer-events: none;
+    z-index: 1000;
+    animation: lebron-pulse 1s ease-in-out infinite;
+}
+
+@keyframes lebron-pulse {
+    0% { opacity: 0.2; }
+    50% { opacity: 0.4; }
+    100% { opacity: 0.2; }
+}
+
+/* Explosion animation */
+.explosion {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(128, 0, 128, 0.8) 0%, rgba(128, 0, 128, 0.4) 50%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1001;
+    animation: explode 0.5s ease-out forwards;
+}
+
+@keyframes explode {
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 1;
+    }
+    50% {
+        width: 300px;
+        height: 300px;
+        opacity: 0.8;
+    }
+    100% {
+        width: 500px;
+        height: 500px;
+        opacity: 0;
+    }
+}

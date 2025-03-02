@@ -12,8 +12,9 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 
 RARITY_TIERS = {
+    "LEBRON": {"chance": 50000000, "color": "#800080", "value": 10000000},  # Purple color, highest value
     "Hyperpigmentation": {"chance": 10000000, "color": "#D2B48C", "value": 5000000},  # Tan color
-    "Hax": {"chance": 2500000, "color": "#008800", "value": 1000000},  # Dark green (switched from gradient to solid)
+    "Hax": {"chance": 2500000, "color": "#008800", "value": 1000000},  # Dark green
     "Secret": {"chance": 1000000, "color": "#FFD700", "value": 500000},  # Gold
     "Special": {"chance": 500000, "color": "#87CEEB", "value": 250000},  # Chill blue
     "Ancient": {"chance": 100000, "color": "#4B0082", "value": 50000},  # Indigo
