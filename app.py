@@ -51,16 +51,16 @@ def index():
             session['inventory_upgrade'] = 0
         if 'auto_sell_settings' not in session:
             session['auto_sell_settings'] = {rarity: False for rarity in RARITY_TIERS}
-            
+
         # Check daily reward status
         can_claim_daily = True
         time_until_next = "Available now!"
-        
+
         if 'last_daily_claim' in session:
             last_claim = datetime.fromisoformat(session['last_daily_claim'])
             now = datetime.now()
             can_claim_daily = (now - last_claim) > timedelta(hours=24)
-            
+
             if not can_claim_daily:
                 next_claim = last_claim + timedelta(hours=24)
                 time_left = next_claim - now
@@ -68,22 +68,23 @@ def index():
                 minutes_left = int((time_left.total_seconds() % 3600) // 60)
                 time_until_next = f"{hours_left}h {minutes_left}m"
 
-        return render_template('index.html', 
-                             rarity_tiers=RARITY_TIERS, 
-                             roll_count=session['roll_count'],
-                             luck_bonus=calculate_luck(session['roll_count']),
-                             can_auto_roll=session['roll_count'] >= 50,
-                             inventory=session['inventory'],
-                             coins=session['coins'],
-                             purchased_luck=session['purchased_luck'],
-                             inventory_capacity=3 + session.get('inventory_upgrade', 0),
-                             inventory_upgrade=session.get('inventory_upgrade', 0),
-                             auto_sell_settings=session.get('auto_sell_settings', {}),
-                             can_claim_daily=can_claim_daily,
-                             time_until_next=time_until_next)
+        return render_template('index.html',
+                                 rarity_tiers=RARITY_TIERS,
+                                 roll_count=session['roll_count'],
+                                 luck_bonus=calculate_luck(session['roll_count']),
+                                 can_auto_roll=session['roll_count'] >= 50,
+                                 inventory=session['inventory'],
+                                 coins=session['coins'],
+                                 purchased_luck=session['purchased_luck'],
+                                 inventory_capacity=3 + session.get('inventory_upgrade', 0),
+                                 inventory_upgrade=session.get('inventory_upgrade', 0),
+                                 auto_sell_settings=session.get('auto_sell_settings', {}),
+                                 can_claim_daily=can_claim_daily,
+                                 time_until_next=time_until_next)
     except Exception as e:
         logger.error(f"Error rendering index: {e}")
         return "An error occurred", 500
+
 
 def calculate_luck(roll_count):
     # If luck is toggled off, return 1
@@ -95,7 +96,7 @@ def calculate_luck(roll_count):
     permanent_luck = session.get('permanent_luck', 0)  # Permanent luck from Divine secret
 
     total_base_luck = base_luck + purchased_luck + permanent_luck
-    
+
     # Check for one-time rare luck boost (x2500)
     if session.get('rare_luck_boost'):
         # Use the boost for this roll, then remove it
@@ -121,6 +122,7 @@ def calculate_luck(roll_count):
             session.pop('epic_multiplier2', None)
     return total_base_luck
 
+
 @app.route('/sell/<rarity>')
 def sell_item(rarity):
     try:
@@ -139,6 +141,7 @@ def sell_item(rarity):
     except Exception as e:
         logger.error(f"Error selling item: {e}")
         return jsonify({"error": "Failed to sell item"}), 500
+
 
 @app.route('/buy-luck')
 def buy_luck():
@@ -163,6 +166,7 @@ def buy_luck():
     except Exception as e:
         logger.error(f"Error buying luck: {e}")
         return jsonify({"error": "Failed to buy luck"}), 500
+
 
 @app.route('/buy-max-luck')
 def buy_max_luck():
@@ -200,17 +204,18 @@ def buy_max_luck():
         logger.error(f"Error buying max luck: {e}")
         return jsonify({"error": "Failed to buy max luck"}), 500
 
+
 @app.route('/toggle-luck')
 def toggle_luck():
     try:
         # If luck_active doesn't exist, initialize it to True
         if 'luck_active' not in session:
             session['luck_active'] = True
-        
+
         # Toggle the state
         session['luck_active'] = not session.get('luck_active')
         session.modified = True
-        
+
         return jsonify({
             "success": True,
             "luck_active": session['luck_active'],
@@ -220,6 +225,7 @@ def toggle_luck():
         logger.error(f"Error toggling luck: {e}")
         return jsonify({"error": "Failed to toggle luck"}), 500
 
+
 @app.route('/buy-storage')
 def buy_storage():
     try:
@@ -227,7 +233,7 @@ def buy_storage():
         # Level 1: 100, Level 2: 300, Level 3: 900, etc.
         current_level = session.get('inventory_upgrade', 0)
         cost = 100 * (3 ** current_level)
-        
+
         if session['coins'] >= cost:
             session['coins'] -= cost
             session['inventory_upgrade'] += 1
@@ -244,20 +250,21 @@ def buy_storage():
         logger.error(f"Error buying storage: {e}")
         return jsonify({"error": "Failed to buy storage"}), 500
 
+
 @app.route('/toggle-auto-sell/<rarity>')
 def toggle_auto_sell(rarity):
     try:
         if rarity not in RARITY_TIERS:
             return jsonify({"error": "Invalid rarity"}), 400
-            
+
         # Initialize auto_sell_settings if it doesn't exist
         if 'auto_sell_settings' not in session:
             session['auto_sell_settings'] = {r: False for r in RARITY_TIERS}
-        
+
         # Toggle the setting for this rarity
         session['auto_sell_settings'][rarity] = not session['auto_sell_settings'].get(rarity, False)
         session.modified = True
-        
+
         return jsonify({
             "success": True,
             "rarity": rarity,
@@ -266,6 +273,7 @@ def toggle_auto_sell(rarity):
     except Exception as e:
         logger.error(f"Error toggling auto-sell for {rarity}: {e}")
         return jsonify({"error": f"Failed to toggle auto-sell for {rarity}"}), 500
+
 
 @app.route('/roll')
 def roll():
@@ -284,13 +292,24 @@ def roll():
 
         session['roll_count'] += 1
         luck = calculate_luck(session['roll_count'])
+        logger.debug(f"Rolling with luck multiplier: {luck}")
 
+        # Modified roll calculation for better handling of high luck values
         roll_number = random.randint(1, 100000)
         result = "Uncommon"  # Default result
 
-        # Apply luck to improve chances
+        # Apply luck to improve chances - with better handling for extremely high luck values
         for rarity, info in RARITY_TIERS.items():
-            if roll_number <= (100000 / info["chance"]) * luck:
+            # Calculate effective chance with luck
+            effective_chance = min(100000, (100000 / info["chance"]) * luck)
+
+            # For extremely high luck values, guarantee the highest possible rarity
+            if luck >= 1000000:  # If luck is extremely high
+                if rarity == "LEBRON":
+                    result = rarity
+                    break
+            # For high but not extreme luck, use proper probability scaling
+            elif roll_number <= effective_chance:
                 result = rarity
                 break
 
@@ -304,7 +323,6 @@ def roll():
         else:
             # Add to inventory only if not auto-sold
             session['inventory'].append(result)
-            
 
         session.modified = True
 
@@ -325,6 +343,7 @@ def roll():
     except Exception as e:
         logger.error(f"Error during roll: {e}")
         return jsonify({"error": "An error occurred during roll"}), 500
+
 
 @app.route('/sell-all')
 def sell_all():
@@ -354,6 +373,7 @@ def sell_all():
         logger.error(f"Error selling all items: {e}")
         return jsonify({"error": "Failed to sell all items"}), 500
 
+
 @app.route('/activate-super-luck/<button_type>')
 def activate_super_luck(button_type):
     try:
@@ -377,11 +397,12 @@ def activate_super_luck(button_type):
         session.modified = True
 
         # Set cookie to track usage for this specific button
-        response.set_cookie(f'used_super_luck_{button_type}', 'true', max_age=365*24*60*60)  # 1 year expiry
+        response.set_cookie(f'used_super_luck_{button_type}', 'true', max_age=365 * 24 * 60 * 60)  # 1 year expiry
         return response
     except Exception as e:
         logger.error(f"Error activating super luck: {e}")
         return jsonify({"error": "Failed to activate super luck"}), 500
+
 
 @app.route('/activate-divine-luck')
 def activate_divine_luck():
@@ -397,12 +418,13 @@ def activate_divine_luck():
         session.modified = True
 
         # Set cookie to track usage
-        response.set_cookie('used_divine_luck', 'true', max_age=365*24*60*60)  # 1 year expiry
+        response.set_cookie('used_divine_luck', 'true', max_age=365 * 24 * 60 * 60)  # 1 year expiry
         return response
     except Exception as e:
         logger.error(f"Error activating divine luck: {e}")
         return jsonify({"error": "Failed to activate divine luck"}), 500
-        
+
+
 @app.route('/activate-divine-luck2')
 def activate_divine_luck2():
     try:
@@ -417,12 +439,13 @@ def activate_divine_luck2():
         session.modified = True
 
         # Set cookie to track usage
-        response.set_cookie('used_divine_luck2', 'true', max_age=365*24*60*60)  # 1 year expiry
+        response.set_cookie('used_divine_luck2', 'true', max_age=365 * 24 * 60 * 60)  # 1 year expiry
         return response
     except Exception as e:
         logger.error(f"Error activating divine luck 2: {e}")
         return jsonify({"error": "Failed to activate divine luck 2"}), 500
-        
+
+
 @app.route('/activate-rare-luck')
 def activate_rare_luck():
     try:
@@ -437,11 +460,12 @@ def activate_rare_luck():
         session.modified = True
 
         # Set cookie to track usage
-        response.set_cookie('used_rare_luck', 'true', max_age=365*24*60*60)  # 1 year expiry
+        response.set_cookie('used_rare_luck', 'true', max_age=365 * 24 * 60 * 60)  # 1 year expiry
         return response
     except Exception as e:
         logger.error(f"Error activating rare luck: {e}")
         return jsonify({"error": "Failed to activate rare luck"}), 500
+
 
 @app.route('/activate-legendary-luck')
 def activate_legendary_luck():
@@ -457,11 +481,12 @@ def activate_legendary_luck():
         session.modified = True
 
         # Set cookie to track usage
-        response.set_cookie('used_legendary_luck', 'true', max_age=365*24*60*60)  # 1 year expiry
+        response.set_cookie('used_legendary_luck', 'true', max_age=365 * 24 * 60 * 60)  # 1 year expiry
         return response
     except Exception as e:
         logger.error(f"Error activating legendary luck: {e}")
         return jsonify({"error": "Failed to activate legendary luck"}), 500
+
 
 @app.route('/activate-legendary-luck2')
 def activate_legendary_luck2():
@@ -477,11 +502,12 @@ def activate_legendary_luck2():
         session.modified = True
 
         # Set cookie to track usage
-        response.set_cookie('used_legendary_luck2', 'true', max_age=365*24*60*60)  # 1 year expiry
+        response.set_cookie('used_legendary_luck2', 'true', max_age=365 * 24 * 60 * 60)  # 1 year expiry
         return response
     except Exception as e:
         logger.error(f"Error activating legendary luck 2: {e}")
         return jsonify({"error": "Failed to activate legendary luck 2"}), 500
+
 
 @app.route('/activate-mythical-luck')
 def activate_mythical_luck():
@@ -497,11 +523,12 @@ def activate_mythical_luck():
         session.modified = True
 
         # Set cookie to track usage
-        response.set_cookie('used_mythical_luck', 'true', max_age=365*24*60*60)  # 1 year expiry
+        response.set_cookie('used_mythical_luck', 'true', max_age=365 * 24 * 60 * 60)  # 1 year expiry
         return response
     except Exception as e:
         logger.error(f"Error activating mythical luck: {e}")
         return jsonify({"error": "Failed to activate mythical luck"}), 500
+
 
 
 @app.route('/reset-cookies')
@@ -523,6 +550,7 @@ def reset_cookies():
         logger.error(f"Error resetting cookies: {e}")
         return jsonify({"error": "Failed to reset cookies"}), 500
 
+
 @app.route('/reset-all')
 def reset_all():
     try:
@@ -542,7 +570,8 @@ def reset_all():
     except Exception as e:
         logger.error(f"Error resetting all stats: {e}")
         return jsonify({"error": "Failed to reset all stats"}), 500
-        
+
+
 @app.route('/check-daily-reward')
 def check_daily_reward():
     try:
@@ -554,7 +583,7 @@ def check_daily_reward():
             now = datetime.now()
             # Check if 24 hours have passed since last claim
             can_claim = (now - last_claim) > timedelta(hours=24)
-            
+
         # Calculate time until next reward if can't claim
         if not can_claim:
             last_claim = datetime.fromisoformat(session['last_daily_claim'])
@@ -573,6 +602,7 @@ def check_daily_reward():
     except Exception as e:
         logger.error(f"Error checking daily reward: {e}")
         return jsonify({"error": "Failed to check daily reward status"}), 500
+
 
 @app.route('/claim-daily-reward')
 def claim_daily_reward():
@@ -593,18 +623,18 @@ def claim_daily_reward():
 
         # Set today as last claim date
         session['last_daily_claim'] = datetime.now().isoformat()
-        
+
         # Apply roll with 1000x luck
         if 'roll_count' not in session:
             session['roll_count'] = 0
         if 'inventory' not in session:
             session['inventory'] = []
-            
+
         session['roll_count'] += 1
         # Use base luck multiplied by 1000
         base_luck = calculate_luck(session['roll_count'])
         daily_luck = base_luck * 1000
-        
+
         roll_number = random.randint(1, 100000)
         result = "Uncommon"  # Default result
 
@@ -629,6 +659,7 @@ def claim_daily_reward():
     except Exception as e:
         logger.error(f"Error claiming daily reward: {e}")
         return jsonify({"error": "Failed to claim daily reward"}), 500
+
 
 if __name__ == '__main__':
     logger.info(f"Starting server on port 5000")
