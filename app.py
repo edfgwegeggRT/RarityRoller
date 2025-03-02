@@ -288,9 +288,11 @@ def roll():
         roll_number = random.randint(1, 100000)
         result = "Uncommon"  # Default result
 
-        # Apply luck to improve chances
+        # Apply luck to improve chances - with better handling for extremely high luck values
         for rarity, info in RARITY_TIERS.items():
-            if roll_number <= (100000 / info["chance"]) * luck:
+            threshold = (100000 / info["chance"]) * luck
+            # Cap the threshold at a reasonable maximum to prevent overflow issues
+            if threshold > 100000 or roll_number <= threshold:
                 result = rarity
                 break
 
