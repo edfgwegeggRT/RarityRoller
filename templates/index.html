@@ -76,7 +76,7 @@
                 <!-- Inventory Section -->
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h3>Inventory (<span id="inventory-count">{{ inventory|length }}</span>/10)</h3>
+                        <h3>Inventory (<span id="inventory-count">{{ inventory|length }}</span>/<span id="inventory-capacity">{{ inventory_capacity }}</span>)</h3>
                         <button id="sell-all-button" class="btn btn-warning">Sell All</button>
                     </div>
                     <div class="card-body">
@@ -103,9 +103,27 @@
                     <div class="card-body">
                         <div class="shop-item mb-3">
                             <h5>Purchase Luck (+1x)</h5>
-                            <p>Cost: 50 <i class="fas fa-coins text-warning"></i></p>
+                            <p>Cost: <span id="luck-cost">{{ 50 * (4 ** purchased_luck) }}</span> <i class="fas fa-coins text-warning"></i></p>
                             <button id="buy-luck-button" class="btn btn-outline-warning">
                                 Buy Luck Boost
+                            </button>
+                            <button id="buy-max-luck-button" class="btn btn-outline-warning mt-2">
+                                Buy Max Luck
+                            </button>
+                        </div>
+                        <div class="shop-item mb-3">
+                            <h5>Luck Toggle</h5>
+                            <p>Current status: <span id="luck-status" class="badge bg-success">ON</span></p>
+                            <button id="toggle-luck-button" class="btn btn-outline-primary">
+                                Toggle Luck On/Off
+                            </button>
+                        </div>
+                        <div class="shop-item">
+                            <h5>Upgrade Storage (+1 slot)</h5>
+                            <p>Current capacity: <span id="displayed-capacity">{{ inventory_capacity }}</span> slots</p>
+                            <p>Cost: <span id="storage-cost">{{ 100 * (3 ** inventory_upgrade) }}</span> <i class="fas fa-coins text-warning"></i></p>
+                            <button id="buy-storage-button" class="btn btn-outline-warning">
+                                Buy Storage Slot
                             </button>
                         </div>
                     </div>
@@ -124,6 +142,7 @@
                                         <th>Rarity</th>
                                         <th>Base Chance</th>
                                         <th>Value</th>
+                                        <th>Auto-Sell</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -136,6 +155,16 @@
                                         </td>
                                         <td>1 in {{ info.chance }}</td>
                                         <td>{{ info.value }} <i class="fas fa-coins text-warning"></i></td>
+                                        <td>
+                                            <button class="btn btn-sm auto-sell-toggle {% if auto_sell_settings.get(rarity, False) %}btn-success{% else %}btn-outline-secondary{% endif %}" 
+                                                data-rarity="{{ rarity }}">
+                                                {% if auto_sell_settings.get(rarity, False) %}
+                                                <i class="fas fa-check-circle"></i> ON
+                                                {% else %}
+                                                <i class="fas fa-times-circle"></i> OFF
+                                                {% endif %}
+                                            </button>
+                                        </td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>

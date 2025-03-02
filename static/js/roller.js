@@ -11,10 +11,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const coinCountDisplay = document.getElementById('coin-count');
     const buyLuckButton = document.getElementById('buy-luck-button');
     const sellAllButton = document.getElementById('sell-all-button');
+    const autoSellToggles = document.querySelectorAll('.auto-sell-toggle'); // Added
+
 
     let isAutoRolling = false;
     let autoRollInterval;
-    
+
     // Sell all functionality
     sellAllButton.addEventListener('click', async function() {
         try {
@@ -136,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update displays
                 coinCountDisplay.textContent = data.coins;
                 luckBonusDisplay.textContent = data.total_luck + 'x';
+                document.getElementById('luck-cost').textContent = data.next_cost;
 
                 // Show success message
                 const notification = document.createElement('div');
@@ -156,49 +159,193 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Buy max luck functionality
+    const buyMaxLuckButton = document.getElementById('buy-max-luck-button');
+
+    buyMaxLuckButton.addEventListener('click', async function() {
+        try {
+            const response = await fetch('/buy-max-luck');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update displays
+                coinCountDisplay.textContent = data.coins;
+                luckBonusDisplay.textContent = data.total_luck + 'x';
+                document.getElementById('luck-cost').textContent = data.next_cost;
+
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Purchased ${data.levels_purchased} luck levels for ${data.total_spent} coins!`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Failed to buy max luck';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error buying max luck:', error);
+        }
+    });
+
+    // Toggle luck functionality
+    const toggleLuckButton = document.getElementById('toggle-luck-button');
+    const luckStatusDisplay = document.getElementById('luck-status');
+
+    toggleLuckButton.addEventListener('click', async function() {
+        try {
+            const response = await fetch('/toggle-luck');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update the luck display
+                luckBonusDisplay.textContent = data.total_luck + 'x';
+                luckStatusDisplay.textContent = data.luck_active ? 'ON' : 'OFF';
+                luckStatusDisplay.className = data.luck_active ? 'badge bg-success' : 'badge bg-danger';
+
+                // Show notification
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Luck ${data.luck_active ? 'activated' : 'deactivated'}! Current luck: ${data.total_luck}x`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                console.error('Failed to toggle luck:', data.error);
+            }
+        } catch (error) {
+            console.error('Error toggling luck:', error);
+        }
+    });
+
+    // Buy storage functionality
+    const buyStorageButton = document.getElementById('buy-storage-button');
+    const displayedCapacity = document.getElementById('displayed-capacity');
+    const storageCostDisplay = document.getElementById('storage-cost');
+
+    buyStorageButton.addEventListener('click', async function() {
+        try {
+            const response = await fetch('/buy-storage');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update displays
+                coinCountDisplay.textContent = data.coins;
+                displayedCapacity.textContent = data.inventory_capacity;
+                storageCostDisplay.textContent = data.next_cost;
+
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = 'Storage upgraded successfully!';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                // Show error message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = data.error || 'Failed to upgrade storage';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            }
+        } catch (error) {
+            console.error('Error buying storage:', error);
+        }
+    });
+
+    // Auto-sell toggle functionality
+    autoSellToggles.forEach(button => {
+        button.addEventListener('click', async function() {
+            const rarity = this.dataset.rarity;
+            try {
+                const response = await fetch(`/toggle-auto-sell/${rarity}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Update button appearance
+                    if (data.auto_sell_enabled) {
+                        this.classList.remove('btn-outline-secondary');
+                        this.classList.add('btn-success');
+                        this.innerHTML = '<i class="fas fa-check-circle"></i> ON';
+                    } else {
+                        this.classList.remove('btn-success');
+                        this.classList.add('btn-outline-secondary');
+                        this.innerHTML = '<i class="fas fa-times-circle"></i> OFF';
+                    }
+
+                    // Show notification
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = `Auto-sell for ${rarity} ${data.auto_sell_enabled ? 'enabled' : 'disabled'}`;
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 2000);
+                } else {
+                    // Show error message
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = data.error || 'Failed to toggle auto-sell';
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 2000);
+                }
+            } catch (error) {
+                console.error('Error toggling auto-sell:', error);
+            }
+        });
+    });
+
     async function performRoll() {
-        // Disable button and show spinner
+        if (rollButton.disabled) return;
+
+        // Disable button during roll
         rollButton.disabled = true;
-        rarityText.classList.add('d-none');
-        spinner.classList.remove('d-none');
 
         try {
+            // Show spinner, hide result
+            rarityText.classList.add('d-none');
+            spinner.classList.remove('d-none');
+
             const response = await fetch('/roll');
             const data = await response.json();
 
-            if (!response.ok) {
+            if (response.ok) {
+                // Update roll count and luck bonus
+                rollCountDisplay.textContent = data.roll_count;
+                luckBonusDisplay.textContent = data.luck_bonus + 'x';
+
+                // Enable auto-roll if roll count is high enough
+                if (data.can_auto_roll && autoRollButton.classList.contains('disabled')) {
+                    autoRollButton.classList.remove('disabled');
+                    autoRollButton.disabled = false;
+                }
+
+                // Update the inventory display
+                updateInventoryDisplay(data.inventory);
+                coinCountDisplay.textContent = data.coins;
+
+                // Show the result
+                rarityText.textContent = data.result;
+                rarityText.style.color = data.color;
+                rarityText.classList.remove('d-none');
+                spinner.classList.add('d-none');
+
+                // Show auto-sell notification if applicable
+                if (data.auto_sold) {
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = `Auto-sold ${data.result} for ${data.auto_sell_value} coins!`;
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 2000);
+                }
+
+                // Add animation class
+                rarityText.classList.add('roll-animation');
+            } else {
                 throw new Error(data.error || 'Failed to roll');
             }
 
-            // Hide spinner
-            spinner.classList.add('d-none');
-            rarityText.classList.remove('d-none');
-
-            // Update display
-            rarityText.textContent = data.result;
-            rarityText.style.color = data.color;
-            rarityText.classList.add('roll-animation');
-
-            // Show secret button only on Uncommon roll
-            if (data.result === 'Uncommon') {
-                secretButton.classList.remove('d-none');
-            } else {
-                secretButton.classList.add('d-none');
-            }
-
-            // Update stats
-            rollCountDisplay.textContent = data.roll_count;
-            luckBonusDisplay.textContent = data.luck_bonus + 'x';
-            coinCountDisplay.textContent = data.coins;
-
-            // Update inventory
-            updateInventoryDisplay(data.inventory);
-
-            // Enable auto-roll if unlocked
-            if (data.can_auto_roll) {
-                autoRollButton.classList.remove('disabled');
-                autoRollButton.disabled = false;
-            }
 
             // Remove animation class after it completes
             setTimeout(() => {

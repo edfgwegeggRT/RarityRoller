@@ -3,6 +3,7 @@ import random
 from flask import Flask, render_template, jsonify, session, make_response, request
 import logging
 from datetime import datetime, timedelta
+import uuid
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -39,6 +40,20 @@ def index():
             session['inventory_upgrade'] = 0
         if 'auto_sell_settings' not in session:
             session['auto_sell_settings'] = {rarity: False for rarity in RARITY_TIERS}
+        if 'locked_items' not in session:
+            session['locked_items'] = []  # Items that are locked and cannot be auto-sold
+        if 'player_id' not in session:
+            # Generate a unique ID for this player for leaderboard
+            session['player_id'] = str(uuid.uuid4())
+
+        # Global leaderboards (stored in memory for simplicity)
+        if not hasattr(app, 'leaderboard_coins'):
+            app.leaderboard_coins = []
+        if not hasattr(app, 'leaderboard_rolls'):
+            app.leaderboard_rolls = []
+
+        # Update leaderboards if needed
+        update_leaderboards(session.get('player_id'), session.get('coins', 0), session.get('roll_count', 0))
 
         return render_template('index.html', 
                              rarity_tiers=RARITY_TIERS, 
@@ -50,7 +65,10 @@ def index():
                              purchased_luck=session['purchased_luck'],
                              inventory_capacity=20 + session.get('inventory_upgrade', 0),
                              inventory_upgrade=session.get('inventory_upgrade', 0),
-                             auto_sell_settings=session.get('auto_sell_settings', {}))
+                             auto_sell_settings=session.get('auto_sell_settings', {}),
+                             locked_items=session.get('locked_items', []),
+                             leaderboard_coins=get_top_leaderboard('coins', 10),
+                             leaderboard_rolls=get_top_leaderboard('rolls', 10))
     except Exception as e:
         logger.error(f"Error rendering index: {e}")
         return "An error occurred", 500
@@ -59,7 +77,7 @@ def calculate_luck(roll_count):
     # If luck is toggled off, return 1
     if not session.get('luck_active', True):
         return 1
-        
+
     base_luck = 1 + (roll_count // 100)  # Base luck from rolls
     purchased_luck = session.get('purchased_luck', 0)  # Luck from shop
 
@@ -75,7 +93,7 @@ def calculate_luck(roll_count):
 @app.route('/sell/<rarity>')
 def sell_item(rarity):
     try:
-        if rarity in session['inventory']:
+        if rarity in session['inventory'] and rarity not in session['locked_items']:
             session['inventory'].remove(rarity)
             value = RARITY_TIERS[rarity]['value']
             session['coins'] += value
@@ -86,7 +104,7 @@ def sell_item(rarity):
                 "inventory": session['inventory'],
                 "value": value
             })
-        return jsonify({"error": "Item not in inventory"}), 400
+        return jsonify({"error": "Item not in inventory or locked"}), 400
     except Exception as e:
         logger.error(f"Error selling item: {e}")
         return jsonify({"error": "Failed to sell item"}), 500
@@ -98,7 +116,7 @@ def buy_luck():
         # Level 1: 50, Level 2: 200, Level 3: 800, etc.
         current_level = session.get('purchased_luck', 0)
         cost = 50 * (4 ** current_level)
-        
+
         if session['coins'] >= cost:
             session['coins'] -= cost
             session['purchased_luck'] += 1
@@ -120,11 +138,11 @@ def buy_max_luck():
     try:
         purchased_levels = 0
         total_spent = 0
-        
+
         while True:
             current_level = session.get('purchased_luck', 0)
             cost = 50 * (4 ** current_level)
-            
+
             if session['coins'] >= cost:
                 session['coins'] -= cost
                 session['purchased_luck'] += 1
@@ -132,10 +150,10 @@ def buy_max_luck():
                 total_spent += cost
             else:
                 break
-        
+
         if purchased_levels == 0:
             return jsonify({"error": "Not enough coins to buy any luck"}), 400
-            
+
         session.modified = True
         return jsonify({
             "success": True,
@@ -156,11 +174,11 @@ def toggle_luck():
         # If luck_active doesn't exist, initialize it to True
         if 'luck_active' not in session:
             session['luck_active'] = True
-        
+
         # Toggle the state
         session['luck_active'] = not session.get('luck_active')
         session.modified = True
-        
+
         return jsonify({
             "success": True,
             "luck_active": session['luck_active'],
@@ -177,7 +195,7 @@ def buy_storage():
         # Level 1: 100, Level 2: 300, Level 3: 900, etc.
         current_level = session.get('inventory_upgrade', 0)
         cost = 100 * (3 ** current_level)
-        
+
         if session['coins'] >= cost:
             session['coins'] -= cost
             session['inventory_upgrade'] += 1
@@ -199,15 +217,15 @@ def toggle_auto_sell(rarity):
     try:
         if rarity not in RARITY_TIERS:
             return jsonify({"error": "Invalid rarity"}), 400
-            
+
         # Initialize auto_sell_settings if it doesn't exist
         if 'auto_sell_settings' not in session:
             session['auto_sell_settings'] = {r: False for r in RARITY_TIERS}
-        
+
         # Toggle the setting for this rarity
         session['auto_sell_settings'][rarity] = not session['auto_sell_settings'].get(rarity, False)
         session.modified = True
-        
+
         return jsonify({
             "success": True,
             "rarity": rarity,
@@ -244,18 +262,19 @@ def roll():
                 result = rarity
                 break
 
-        # Check if this rarity should be auto-sold
+        # Check if this rarity should be auto-sold and is not locked
         auto_sold = False
         auto_sell_value = 0
-        if session['auto_sell_settings'].get(result, False):
+        if session['auto_sell_settings'].get(result, False) and result not in session['locked_items']:
             auto_sold = True
             auto_sell_value = RARITY_TIERS[result]['value']
             session['coins'] += auto_sell_value
         else:
             # Add to inventory only if not auto-sold
             session['inventory'].append(result)
-            
+
         session.modified = True
+        update_leaderboards(session['player_id'], session['coins'], session['roll_count'])
 
         response = {
             "result": result,
@@ -278,21 +297,22 @@ def roll():
 @app.route('/sell-all')
 def sell_all():
     try:
-        if not session['inventory']:
-            return jsonify({"error": "No items in inventory"}), 400
+        sellable_items = [item for item in session['inventory'] if item not in session['locked_items']]
+        if not sellable_items:
+            return jsonify({"error": "No sellable items in inventory"}), 400
 
         total_value = 0
-        for rarity in session['inventory']:
+        for rarity in sellable_items:
             total_value += RARITY_TIERS[rarity]['value']
 
         # Calculate bonus coins: 1 coin for every 2 rarities
-        rarity_bonus = len(session['inventory']) // 2
+        rarity_bonus = len(sellable_items) // 2
         total_value += rarity_bonus
 
         session['coins'] += total_value
-        session['inventory'] = []
+        session['inventory'] = [item for item in session['inventory'] if item in session['locked_items']]
         session.modified = True
-
+        update_leaderboards(session['player_id'], session['coins'], session['roll_count'])
         return jsonify({
             "success": True,
             "coins": session['coins'],
@@ -302,6 +322,7 @@ def sell_all():
     except Exception as e:
         logger.error(f"Error selling all items: {e}")
         return jsonify({"error": "Failed to sell all items"}), 500
+
 
 @app.route('/activate-super-luck')
 def activate_super_luck():
@@ -350,6 +371,58 @@ def reset_all():
     except Exception as e:
         logger.error(f"Error resetting all stats: {e}")
         return jsonify({"error": "Failed to reset all stats"}), 500
+
+@app.route('/lock-item/<rarity>')
+def lock_item(rarity):
+    try:
+        if rarity in session['inventory'] and rarity not in session['locked_items']:
+            session['locked_items'].append(rarity)
+            session.modified = True
+            return jsonify({"success": True, "locked_items": session['locked_items']})
+        return jsonify({"error": "Item not in inventory or already locked"}), 400
+    except Exception as e:
+        logger.error(f"Error locking item {rarity}: {e}")
+        return jsonify({"error": "Failed to lock item"}), 500
+
+@app.route('/unlock-item/<rarity>')
+def unlock_item(rarity):
+    try:
+        if rarity in session['locked_items']:
+            session['locked_items'].remove(rarity)
+            session.modified = True
+            return jsonify({"success": True, "locked_items": session['locked_items']})
+        return jsonify({"error": "Item not locked"}), 400
+    except Exception as e:
+        logger.error(f"Error unlocking item {rarity}: {e}")
+        return jsonify({"error": "Failed to unlock item"}), 500
+
+def update_leaderboards(player_id, coins, rolls):
+    #Simple in-memory leaderboard update.  Replace with database interaction for production
+    leaderboard_entry = next((entry for entry in app.leaderboard_coins if entry['player_id'] == player_id), None)
+    if leaderboard_entry:
+        leaderboard_entry['coins'] = coins
+    else:
+        app.leaderboard_coins.append({'player_id': player_id, 'coins': coins})
+
+    leaderboard_entry = next((entry for entry in app.leaderboard_rolls if entry['player_id'] == player_id), None)
+    if leaderboard_entry:
+        leaderboard_entry['rolls'] = rolls
+    else:
+        app.leaderboard_rolls.append({'player_id': player_id, 'rolls': rolls})
+
+    app.leaderboard_coins.sort(key=lambda x: x['coins'], reverse=True)
+    app.leaderboard_rolls.sort(key=lambda x: x['rolls'], reverse=True)
+
+
+def get_top_leaderboard(type, limit):
+    if type == 'coins':
+        leaderboard = app.leaderboard_coins
+    elif type == 'rolls':
+        leaderboard = app.leaderboard_rolls
+    else:
+        return []
+    return leaderboard[:limit]
+
 
 if __name__ == '__main__':
     logger.info(f"Starting server on port 5000")
