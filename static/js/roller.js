@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const goodSecretButton = document.getElementById('good-secret-button');
     const epicSecretButton = document.getElementById('epic-secret-button');
     const divineSecretButton = document.getElementById('divine-secret-button');
+    const rareSecretButton = document.getElementById('rare-secret-button'); // Initialize rare secret button
 
     let isAutoRolling = false;
     let autoRollInterval;
@@ -154,6 +155,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Error activating divine luck:', error);
+            }
+        });
+    }
+
+    if (rareSecretButton) {
+        rareSecretButton.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/activate-rare-luck');
+                const data = await response.json();
+
+                if (response.ok) {
+                    rareSecretButton.disabled = true;
+                    rareSecretButton.style.display = 'none';
+
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = '🌟 x2500 luck for 1 roll activated! 🌟';
+                    document.body.appendChild(notification);
+
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
+                } else {
+                    console.error('Failed to activate rare luck:', data.error);
+                }
+            } catch (error) {
+                console.error('Error activating rare luck:', error);
             }
         });
     }
@@ -409,6 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 goodSecretButton.classList.add('d-none');
                 epicSecretButton.classList.add('d-none');
                 divineSecretButton.classList.add('d-none');
+                rareSecretButton.classList.add('d-none'); // Add rare secret button handling
 
                 if (data.result === 'Uncommon') {
                     secretButton.classList.remove('d-none');
@@ -430,6 +459,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Position the button over the 'i' of Divine
                     divineSecretButton.style.left = '45%';
                     divineSecretButton.style.top = '20px';
+                } else if (data.result === 'Rare') {
+                    rareSecretButton.classList.remove('d-none');
+                    // Position the button over the 'i' of Divine
+                    rareSecretButton.style.left = '45%';
+                    rareSecretButton.style.top = '20px';
                 }
 
                 // Check for high-rarity rolls and apply special effects
@@ -440,19 +474,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     supernova.className = 'supernova';
                     supernova.style.background = `radial-gradient(circle, ${data.color}66 0%, ${data.color}33 50%, transparent 70%)`;
                     document.body.appendChild(supernova);
-                    
+
                     // Create rotating star effect for Ancient or better rarities
                     if (['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret'].includes(data.result)) {
                         const star = document.createElement('div');
                         star.className = 'star-effect';
-                        
+
                         const starInner = document.createElement('div');
                         starInner.className = 'star-inner';
                         starInner.style.backgroundColor = data.color;
-                        
+
                         star.appendChild(starInner);
                         document.body.appendChild(star);
-                        
+
                         // Remove star after animation
                         setTimeout(() => {
                             star.remove();
@@ -516,6 +550,32 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             rollButton.disabled = false;
         }, 1000);
+    }
+
+    // Handle rarity result text
+    function updateRarityDisplay(result, color) {
+        // Reset secret buttons
+        secretButton.classList.add('d-none');
+        goodSecretButton.classList.add('d-none');
+        epicSecretButton.classList.add('d-none');
+        divineSecretButton.classList.add('d-none');
+        rareSecretButton.classList.add('d-none');
+
+        rarityText.textContent = result;
+        rarityText.style.color = color;
+
+        // Show special buttons based on rarity
+        if (result === 'Secret') {
+            secretButton.classList.remove('d-none');
+        } else if (result === 'Good') {
+            goodSecretButton.classList.remove('d-none');
+        } else if (result === 'Epic') {
+            epicSecretButton.classList.remove('d-none');
+        } else if (result === 'Divine') {
+            divineSecretButton.classList.remove('d-none');
+        } else if (result === 'Rare') {
+            rareSecretButton.classList.remove('d-none');
+        }
     }
 
     function startAutoRoll() {

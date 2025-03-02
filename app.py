@@ -67,6 +67,14 @@ def calculate_luck(roll_count):
     permanent_luck = session.get('permanent_luck', 0)  # Permanent luck from Divine secret
 
     total_base_luck = base_luck + purchased_luck + permanent_luck
+    
+    # Check for one-time rare luck boost (x2500)
+    if session.get('rare_luck_boost'):
+        # Use the boost for this roll, then remove it
+        boost = session.get('rare_luck_boost')
+        session.pop('rare_luck_boost', None)
+        session.modified = True
+        return total_base_luck * boost
 
     if session.get('super_luck_until'):
         # Check if super luck is still active
@@ -356,6 +364,26 @@ def activate_divine_luck():
     except Exception as e:
         logger.error(f"Error activating divine luck: {e}")
         return jsonify({"error": "Failed to activate divine luck"}), 500
+        
+@app.route('/activate-rare-luck')
+def activate_rare_luck():
+    try:
+        response = make_response(jsonify({"success": True}))
+
+        # Check if rare luck was already used
+        if request.cookies.get('used_rare_luck'):
+            return jsonify({"error": "Rare luck already used"}), 400
+
+        # Set rare luck bonus for one roll
+        session['rare_luck_boost'] = 2500
+        session.modified = True
+
+        # Set cookie to track usage
+        response.set_cookie('used_rare_luck', 'true', max_age=365*24*60*60)  # 1 year expiry
+        return response
+    except Exception as e:
+        logger.error(f"Error activating rare luck: {e}")
+        return jsonify({"error": "Failed to activate rare luck"}), 500
 
 
 @app.route('/reset-cookies')
@@ -367,6 +395,7 @@ def reset_cookies():
         response.delete_cookie('used_super_luck_good')
         response.delete_cookie('used_super_luck_epic')
         response.delete_cookie('used_divine_luck')
+        response.delete_cookie('used_rare_luck')
         return response
     except Exception as e:
         logger.error(f"Error resetting cookies: {e}")
