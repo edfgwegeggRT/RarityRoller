@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const autoSellToggles = document.querySelectorAll('.auto-sell-toggle'); 
     const goodSecretButton = document.getElementById('good-secret-button');
     const epicSecretButton = document.getElementById('epic-secret-button');
+    const divineSecretButton = document.getElementById('divine-secret-button');
 
     let isAutoRolling = false;
     let autoRollInterval;
@@ -126,6 +127,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Error activating super luck:', error);
+            }
+        });
+    }
+
+    if (divineSecretButton) {
+        divineSecretButton.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/activate-divine-luck');
+                const data = await response.json();
+
+                if (response.ok) {
+                    divineSecretButton.disabled = true;
+                    divineSecretButton.style.display = 'none';
+
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = '🌟 Permanent +50 luck bonus activated! 🌟';
+                    document.body.appendChild(notification);
+
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
+                } else {
+                    console.error('Failed to activate divine luck:', data.error);
+                }
+            } catch (error) {
+                console.error('Error activating divine luck:', error);
             }
         });
     }
@@ -380,6 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 secretButton.classList.add('d-none');
                 goodSecretButton.classList.add('d-none');
                 epicSecretButton.classList.add('d-none');
+                divineSecretButton.classList.add('d-none');
 
                 if (data.result === 'Uncommon') {
                     secretButton.classList.remove('d-none');
@@ -396,6 +425,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Position the button over the 'c' of Epic
                     epicSecretButton.style.left = '60%';
                     epicSecretButton.style.top = '20px';
+                } else if (data.result === 'Divine') {
+                    divineSecretButton.classList.remove('d-none');
+                    // Position the button over the 'i' of Divine
+                    divineSecretButton.style.left = '45%';
+                    divineSecretButton.style.top = '20px';
                 }
 
                 // Check for high-rarity rolls and apply special effects

@@ -35,6 +35,8 @@ def index():
             session['coins'] = 0
         if 'purchased_luck' not in session:
             session['purchased_luck'] = 0
+        if 'permanent_luck' not in session:
+            session['permanent_luck'] = 0
         if 'inventory_upgrade' not in session:
             session['inventory_upgrade'] = 0
         if 'auto_sell_settings' not in session:
@@ -59,18 +61,23 @@ def calculate_luck(roll_count):
     # If luck is toggled off, return 1
     if not session.get('luck_active', True):
         return 1
-        
+
     base_luck = 1 + (roll_count // 100)  # Base luck from rolls
     purchased_luck = session.get('purchased_luck', 0)  # Luck from shop
+    permanent_luck = session.get('permanent_luck', 0)  # Permanent luck from Divine secret
+
+    total_base_luck = base_luck + purchased_luck + permanent_luck
 
     if session.get('super_luck_until'):
         # Check if super luck is still active
         if datetime.now() < datetime.fromisoformat(session['super_luck_until']):
-            return (base_luck + purchased_luck) * 100  # Apply 100x multiplier
+            multiplier = 250 if session.get('epic_multiplier') else 100  # Use 250x for Epic, 100x for others
+            return total_base_luck * multiplier
         else:
-            # Clear expired super luck
+            # Clear expired super luck and multiplier flag
             session.pop('super_luck_until', None)
-    return base_luck + purchased_luck
+            session.pop('epic_multiplier', None)
+    return total_base_luck
 
 @app.route('/sell/<rarity>')
 def sell_item(rarity):
@@ -256,6 +263,7 @@ def roll():
             # Add to inventory only if not auto-sold
             session['inventory'].append(result)
             
+
         session.modified = True
 
         response = {
@@ -316,12 +324,39 @@ def activate_super_luck(button_type):
         # Set super luck expiration
         session['super_luck_until'] = (datetime.now() + timedelta(seconds=10)).isoformat()
 
+        # Set epic multiplier flag if it's the epic button
+        if button_type == 'epic':
+            session['epic_multiplier'] = True
+
+        session.modified = True
+
         # Set cookie to track usage for this specific button
         response.set_cookie(f'used_super_luck_{button_type}', 'true', max_age=365*24*60*60)  # 1 year expiry
         return response
     except Exception as e:
         logger.error(f"Error activating super luck: {e}")
         return jsonify({"error": "Failed to activate super luck"}), 500
+
+@app.route('/activate-divine-luck')
+def activate_divine_luck():
+    try:
+        response = make_response(jsonify({"success": True}))
+
+        # Check if divine luck was already used
+        if request.cookies.get('used_divine_luck'):
+            return jsonify({"error": "Divine luck already used"}), 400
+
+        # Add permanent luck bonus
+        session['permanent_luck'] = session.get('permanent_luck', 0) + 50
+        session.modified = True
+
+        # Set cookie to track usage
+        response.set_cookie('used_divine_luck', 'true', max_age=365*24*60*60)  # 1 year expiry
+        return response
+    except Exception as e:
+        logger.error(f"Error activating divine luck: {e}")
+        return jsonify({"error": "Failed to activate divine luck"}), 500
+
 
 @app.route('/reset-cookies')
 def reset_cookies():
@@ -331,6 +366,7 @@ def reset_cookies():
         response.delete_cookie('used_super_luck_uncommon')
         response.delete_cookie('used_super_luck_good')
         response.delete_cookie('used_super_luck_epic')
+        response.delete_cookie('used_divine_luck')
         return response
     except Exception as e:
         logger.error(f"Error resetting cookies: {e}")
@@ -343,6 +379,7 @@ def reset_all():
         session['coins'] = 0
         # Set luck to exactly 0
         session['purchased_luck'] = 0
+        session['permanent_luck'] = 0 #added to reset permanent luck
         session['inventory'] = []
         session['inventory_upgrade'] = 0
         session.modified = True
