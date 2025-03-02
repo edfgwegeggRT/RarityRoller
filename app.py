@@ -510,12 +510,17 @@ def reset_cookies():
         response.delete_cookie('used_super_luck_uncommon')
         response.delete_cookie('used_super_luck_good')
         response.delete_cookie('used_super_luck_epic')
+        response.delete_cookie('used_super_luck_epic2')
         response.delete_cookie('used_divine_luck')
         response.delete_cookie('used_divine_luck2')
         response.delete_cookie('used_rare_luck')
         response.delete_cookie('used_legendary_luck')
         response.delete_cookie('used_legendary_luck2')
         response.delete_cookie('used_mythical_luck')
+        response.delete_cookie('used_secret_luck')
+        
+        # Log the reset of cookies
+        logger.info("All secret button cookies have been reset")
         return response
     except Exception as e:
         logger.error(f"Error resetting cookies: {e}")
