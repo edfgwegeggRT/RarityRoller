@@ -322,6 +322,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 rarityText.classList.remove('d-none');
                 spinner.classList.add('d-none');
 
+                // Show secret button only on uncommon rolls
+                if (data.result === 'Uncommon') {
+                    secretButton.classList.remove('d-none');
+                } else {
+                    secretButton.classList.add('d-none');
+                }
+
                 // Check for high-rarity rolls and apply special effects
                 const highRarities = ['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret'];
                 if (highRarities.includes(data.result)) {
