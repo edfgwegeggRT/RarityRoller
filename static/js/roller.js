@@ -35,33 +35,52 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Elements
     const rollButton = document.getElementById('roll-button');
     const autoRollButton = document.getElementById('auto-roll-button');
     const rarityText = document.getElementById('rarity-text');
-    const spinner = document.getElementById('spinner');
     const rollCountDisplay = document.getElementById('roll-count');
     const luckBonusDisplay = document.getElementById('luck-bonus');
-    const secretButton = document.getElementById('secret-button');
     const inventoryContainer = document.getElementById('inventory-items');
     const inventoryCountDisplay = document.getElementById('inventory-count');
     const coinCountDisplay = document.getElementById('coin-count');
-    const buyLuckButton = document.getElementById('buy-luck-button');
+    const spinnerElement = document.getElementById('spinner');
     const sellAllButton = document.getElementById('sell-all-button');
-    const autoSellToggles = document.querySelectorAll('.auto-sell-toggle'); 
+    const buyLuckButton = document.getElementById('buy-luck-button');
+    const buyMaxLuckButton = document.getElementById('buy-max-luck-button');
+    const toggleLuckButton = document.getElementById('toggle-luck-button');
+    const luckStatusDisplay = document.getElementById('luck-status');
+    const buyStorageButton = document.getElementById('buy-storage-button');
+    const inventoryCapacityDisplay = document.getElementById('inventory-capacity');
+    const displayedCapacity = document.getElementById('displayed-capacity');
+    const luckCostDisplay = document.getElementById('luck-cost');
+    const storageCostDisplay = document.getElementById('storage-cost');
+    const unequipButton = document.getElementById('unequip-button');
+
+    // Secret buttons
+    const secretButton = document.getElementById('secret-button');
     const goodSecretButton = document.getElementById('good-secret-button');
     const epicSecretButton = document.getElementById('epic-secret-button');
     const epicSecretButton2 = document.getElementById('epic-secret-button2');
     const divineSecretButton = document.getElementById('divine-secret-button');
     const divineSecretButton2 = document.getElementById('divine-secret-button2');
-    const rareSecretButton = document.getElementById('rare-secret-button'); 
+    const rareSecretButton = document.getElementById('rare-secret-button');
     const legendarySecretButton = document.getElementById('legendary-secret-button');
-    const legendarySecretButton2 = document.getElementById('legendary-secret-button2'); 
-    const equipButton = document.getElementById('equip-button'); // Added equip button
+    const legendarySecretButton2 = document.getElementById('legendary-secret-button2');
+    const mythicalSecretButton = document.getElementById('mythical-secret-button');
 
-    let isAutoRolling = false;
-    let autoRollInterval;
-    let equippedRarity = null; // Added equipped rarity variable
+    // Auto Sell toggles
+    const autoSellToggles = document.querySelectorAll('.auto-sell-toggle');
 
+    // Variables
+    let isRolling = false;
+    let autoRollInterval = null;
+    let equippedRarity = null;  // Track equipped rarity
+
+    // Add event listener for unequip button
+    if (unequipButton) {
+        unequipButton.addEventListener('click', unequipItem);
+    }
 
     // Sell all functionality
     sellAllButton.addEventListener('click', async function() {
@@ -283,39 +302,75 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function updateInventoryDisplay(inventory) {
+    function updateInventoryDisplay(inventory = null) {
         inventoryContainer.innerHTML = '';
-        inventoryCountDisplay.textContent = inventory.length;
+        if (inventory === null){
+            fetch('/inventory')
+                .then(res => res.json())
+                .then(inv => {
+                    inventoryCountDisplay.textContent = inv.length;
+                    inv.forEach(rarity => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'inventory-item';
+                        itemDiv.dataset.rarity = rarity;
 
-        inventory.forEach(rarity => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'inventory-item';
-            itemDiv.dataset.rarity = rarity;
+                        const badge = document.createElement('span');
+                        badge.className = 'badge';
+                        badge.style.backgroundColor = rarityColors[rarity];
+                        badge.textContent = rarity;
 
-            const badge = document.createElement('span');
-            badge.className = 'badge';
-            badge.style.backgroundColor = rarityColors[rarity];
-            badge.textContent = rarity;
+                        const sellButton = document.createElement('button');
+                        sellButton.className = 'btn btn-sm btn-outline-warning sell-button';
+                        sellButton.dataset.rarity = rarity;
+                        sellButton.innerHTML = `Sell (${rarityValues[rarity]} <i class="fas fa-coins"></i>)`;
 
-            const sellButton = document.createElement('button');
-            sellButton.className = 'btn btn-sm btn-outline-warning sell-button';
-            sellButton.dataset.rarity = rarity;
-            sellButton.innerHTML = `Sell (${rarityValues[rarity]} <i class="fas fa-coins"></i>)`;
+                        const equipButton = document.createElement('button'); // Added equip button
+                        equipButton.className = 'btn btn-sm btn-outline-primary equip-button';
+                        equipButton.dataset.rarity = rarity;
+                        equipButton.textContent = 'Equip';
 
-            const equipButton = document.createElement('button'); // Added equip button
-            equipButton.className = 'btn btn-sm btn-outline-primary equip-button';
-            equipButton.dataset.rarity = rarity;
-            equipButton.textContent = 'Equip';
-
-            sellButton.addEventListener('click', () => sellItem(rarity));
-            equipButton.addEventListener('click', () => equipItem(rarity)); // Added equip event listener
+                        sellButton.addEventListener('click', () => sellItem(rarity));
+                        equipButton.addEventListener('click', () => equipItem(rarity)); // Added equip event listener
 
 
-            itemDiv.appendChild(badge);
-            itemDiv.appendChild(sellButton);
-            itemDiv.appendChild(equipButton); // Added equip button to itemDiv
-            inventoryContainer.appendChild(itemDiv);
-        });
+                        itemDiv.appendChild(badge);
+                        itemDiv.appendChild(sellButton);
+                        itemDiv.appendChild(equipButton); // Added equip button to itemDiv
+                        inventoryContainer.appendChild(itemDiv);
+                    });
+                });
+        } else {
+            inventoryCountDisplay.textContent = inventory.length;
+            inventory.forEach(rarity => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'inventory-item';
+                itemDiv.dataset.rarity = rarity;
+
+                const badge = document.createElement('span');
+                badge.className = 'badge';
+                badge.style.backgroundColor = rarityColors[rarity];
+                badge.textContent = rarity;
+
+                const sellButton = document.createElement('button');
+                sellButton.className = 'btn btn-sm btn-outline-warning sell-button';
+                sellButton.dataset.rarity = rarity;
+                sellButton.innerHTML = `Sell (${rarityValues[rarity]} <i class="fas fa-coins"></i>)`;
+
+                const equipButton = document.createElement('button'); // Added equip button
+                equipButton.className = 'btn btn-sm btn-outline-primary equip-button';
+                equipButton.dataset.rarity = rarity;
+                equipButton.textContent = 'Equip';
+
+                sellButton.addEventListener('click', () => sellItem(rarity));
+                equipButton.addEventListener('click', () => equipItem(rarity)); // Added equip event listener
+
+
+                itemDiv.appendChild(badge);
+                itemDiv.appendChild(sellButton);
+                itemDiv.appendChild(equipButton); // Added equip button to itemDiv
+                inventoryContainer.appendChild(itemDiv);
+            });
+        }
     }
 
     async function sellItem(rarity) {
@@ -519,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // Show spinner, hide result
             rarityText.classList.add('d-none');
-            spinner.classList.remove('d-none');
+            spinnerElement.classList.remove('d-none');
 
             const response = await fetch('/roll');
             const data = await response.json();
@@ -535,7 +590,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 rarityText.textContent = data.result;
                 rarityText.style.color = data.color;
                 rarityText.classList.remove('d-none');
-                spinner.classList.add('d-none');
+                spinnerElement.classList.add('d-none');
 
                 // Handle secret buttons based on rarity
                 secretButton.classList.add('d-none');
@@ -752,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.auto_sold) {
                     const notification = document.createElement('div');
                     notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = `Auto-sold ${data.result} for ${data.auto_sell_value} coins!`;
+                    notification.textContent = ``Auto-sold ${data.result} for ${data.auto_sell_value} coins!`;
                     document.body.appendChild(notification);
                     setTimeout(() => notification.remove(), 2000);
                 }
@@ -773,7 +828,7 @@ document.addEventListener('DOMContentLoaded', function() {
             rarityText.textContent = error.message || 'Error occurred!';
             rarityText.style.color = 'red';
             rarityText.classList.remove('d-none');
-            spinner.classList.add('d-none');
+            spinnerElement.classList.add('d-none');
             stopAutoRoll();
 
             const notification = document.createElement('div');
@@ -806,7 +861,7 @@ document.addEventListener('DOMContentLoaded', function() {
         rarityText.style.color = color;
 
         // Show special buttons based on rarity
-        if (result === ''Secret') {
+        if (result === 'Secret') {
             secretButton.classList.remove('d-none');
         } else if (result === 'Good') {
             goodSecretButton.classList.remove('d-none');
@@ -825,8 +880,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function startAutoRoll() {
-        if (isAutoRolling) return;
-        isAutoRolling = true;
+        if (isRolling) return;
+        isRolling = true;
         autoRollButton.innerHTML = '<i class="fas fa-stop me-2"></i>Stop Auto Roll';
         autoRollButton.classList.remove('btn-secondary');
         autoRollButton.classList.add('btn-danger');
@@ -834,8 +889,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function stopAutoRoll() {
-        if (!isAutoRolling) return;
-        isAutoRolling = false;
+        if (!isRolling) return;
+        isRolling = false;
         clearInterval(autoRollInterval);
         autoRollButton.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Auto Roll';
         autoRollButton.classList.remove('btn-danger');
@@ -845,7 +900,7 @@ document.addEventListener('DOMContentLoaded', function() {
     rollButton.addEventListener('click', performRoll);
 
     autoRollButton.addEventListener('click', function() {
-        if (isAutoRolling) {
+        if (isRolling) {
             stopAutoRoll();
         } else {
             startAutoRoll();
@@ -909,8 +964,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (response.ok) {
-                equippedRarity = rarity; // Update equipped rarity
-                updateInventoryDisplay(data.inventory); //Refresh inventory display
+                equippedRarity = rarity; // Store equipped rarity
+
+                // Toggle unequip button visibility
+                const unequipButton = document.getElementById('unequip-button');
+                if (unequipButton) {
+                    unequipButton.classList.remove('d-none');
+                }
+
+                // Update inventory to show equipped status
+                updateInventoryDisplay();
 
                 // Show success message
                 const notification = document.createElement('div');
@@ -919,12 +982,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 2000);
 
-                // Add animation if rarity is Mythical or better
-                const highRarities = ['Mythical', 'Jack Attack', 'Ancient', 'Secret', 'Hax', 'Special', 'Chill', 'Hyperpigmentation'];
-                if (highRarities.includes(rarity)) {
-                    addAnimation(rarity);
-                }
-
+                // Add animation for all rarities (more impressive for higher rarities)
+                addEquippedAnimation(rarity);
             } else {
                 console.error('Failed to equip item:', data.error);
             }
@@ -933,52 +992,126 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Create animation based on rarity
+    function addEquippedAnimation(rarity) {
+        // Remove any existing animations first
+        removeEquippedAnimations();
 
-    function addAnimation(rarity) {
+        // Create container for the animation
+        const animationContainer = document.getElementById('equipped-animation-container');
+        animationContainer.innerHTML = ''; // Clear previous animations
+
+        const rarityColor = rarityColors[rarity];
+
+        // Create animation element
         const animation = document.createElement('div');
-        animation.className = 'equipped-animation';
-        animation.style.backgroundImage = `url('images/${rarity}.gif')`; // Assumes GIFs exist
-        document.body.appendChild(animation);
+        animation.className = `${rarity.toLowerCase().replace(/\s+/g, '-')}-equipped-animation equipped-animation`;
+        animation.id = 'current-equipped-animation';
 
-        // Remove animation on unequip
-        animation.addEventListener('animationend', () => {
-          animation.remove();
-        });
+        // Number of particles based on rarity tier
+        let particleCount = 10; // Base count
 
-        // Add event listener for unequip
-        const unequipButton = document.createElement('button');
-        unequipButton.className = 'btn btn-sm btn-outline-danger unequip-button';
-        unequipButton.textContent = 'Unequip';
-        unequipButton.addEventListener('click', () => unequipItem(rarity, animation));
-        document.body.appendChild(unequipButton); // Add unequip button to the document
-    }
-
-
-    async function unequipItem(rarity, animation) {
-      try {
-        const response = await fetch(`/unequip/${rarity}`);
-        const data = await response.json();
-
-        if (response.ok) {
-          equippedRarity = null; // Reset equipped rarity
-          updateInventoryDisplay(data.inventory); // Refresh inventory display
-
-          // Remove animation
-          animation.remove();
-
-          // Show success message
-          const notification = document.createElement('div');
-          notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-          notification.textContent = `${rarity} unequipped!`;
-          document.body.appendChild(notification);
-          setTimeout(() => notification.remove(), 2000);
-        } else {
-          console.error('Failed to unequip item:', data.error);
+        // Adjust animation complexity based on rarity tier
+        if (['Mythical', 'Divine', 'Jack Attack', 'Ancient', 'Special'].includes(rarity)) {
+            particleCount = 30;
+        } else if (['Legendary', 'Epic', 'Rare'].includes(rarity)) {
+            particleCount = 20;
         }
-      } catch (error) {
-        console.error('Error unequipping item:', error);
-      }
+
+        // Create particles container
+        const particlesContainer = document.createElement('div');
+        particlesContainer.className = `${rarity.toLowerCase().replace(/\s+/g, '-')}-equipped-particles equipped-particles`;
+
+        // Create individual particles
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = `${rarity.toLowerCase().replace(/\s+/g, '-')}-equipped-particle equipped-particle`;
+            particle.style.backgroundColor = rarityColor;
+
+            // Randomize particle positions and animations
+            const randomDelay = Math.random() * 5;
+            const randomDuration = 5 + Math.random() * 5;
+            const randomSize = 5 + Math.random() * 15;
+            const randomStartPosition = Math.random() * 360;
+
+            particle.style.animationDelay = `${randomDelay}s`;
+            particle.style.animationDuration = `${randomDuration}s`;
+            particle.style.width = `${randomSize}px`;
+            particle.style.height = `${randomSize}px`;
+            particle.style.boxShadow = `0 0 10px ${rarityColor}, 0 0 20px ${rarityColor}`;
+
+            // For high-tier rarities, add custom effects
+            if (['Hyperpigmentation', 'Hax', 'Secret'].includes(rarity)) {
+                particle.style.filter = 'hue-rotate(0deg)';
+                particle.style.animation = `equipped-particle-animation ${randomDuration}s infinite linear, color-shift 3s infinite linear`;
+            }
+
+            if (rarity === 'Mythical') {
+                particle.innerHTML = '★';
+                particle.style.fontSize = `${randomSize}px`;
+                particle.style.display = 'flex';
+                particle.style.alignItems = 'center';
+                particle.style.justifyContent = 'center';
+                particle.style.color = '#FFF';
+                particle.style.textShadow = `0 0 5px ${rarityColor}`;
+            }
+
+            particlesContainer.appendChild(particle);
+        }
+
+        animation.appendChild(particlesContainer);
+        animationContainer.appendChild(animation);
+
+        // Set body effect for highest tier rarities
+        if (['Hyperpigmentation', 'Hax', 'Secret'].includes(rarity)) {
+            document.body.classList.add('special-effect-body');
+            document.body.style.setProperty('--effect-color', rarityColor);
+        }
     }
+
+    function removeEquippedAnimations() {
+        const animation = document.getElementById('current-equipped-animation');
+        if (animation) {
+            animation.remove();
+        }
+        document.body.classList.remove('special-effect-body');
+    }
+
+    async function unequipItem() {
+        try {
+            const response = await fetch('/unequip');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Hide unequip button
+                const unequipButton = document.getElementById('unequip-button');
+                if (unequipButton) {
+                    unequipButton.classList.add('d-none');
+                }
+
+                // Clear equipped status
+                equippedRarity = null;
+
+                // Remove animation
+                removeEquippedAnimations();
+
+                // Update inventory display
+                updateInventoryDisplay();
+
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = 'Item unequipped!';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            } else {
+                console.error('Failed to unequip item:', data.error);
+            }
+        } catch (error) {
+            console.error('Error unequipping item:', error);
+        }
+    }
+
 });
 
 
