@@ -716,8 +716,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         supernova.remove();
                     }, 2000); 
 
-                    // Add mythic animation to the text
-                    rarityText.classList.add('mythic-animation');
+                    // Check if the result is LEBRON to trigger special animation
+                    if (data.result === 'LEBRON') {
+                        // Play the LEBRON animation
+                        if (window.playLebronAnimation) {
+                            window.playLebronAnimation(document.getElementById('result-display'));
+                        }
+                    } else {
+                        // Add mythic animation to the text for other results
+                        rarityText.classList.add('mythic-animation');
+                    }
                     
                     // Check if the result is Mythical to show the secret button
                     if (data.result === 'Mythical') {
