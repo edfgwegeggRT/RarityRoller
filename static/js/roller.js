@@ -14,9 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const autoSellToggles = document.querySelectorAll('.auto-sell-toggle'); 
     const goodSecretButton = document.getElementById('good-secret-button');
     const epicSecretButton = document.getElementById('epic-secret-button');
+    const epicSecretButton2 = document.getElementById('epic-secret-button2');
     const divineSecretButton = document.getElementById('divine-secret-button');
-    const rareSecretButton = document.getElementById('rare-secret-button'); // Initialize rare secret button
-    const legendaryButton = document.getElementById('legendary-button'); // Add legendary button
+    const rareSecretButton = document.getElementById('rare-secret-button'); 
+    const legendaryButton = document.getElementById('legendary-button'); 
 
     let isAutoRolling = false;
     let autoRollInterval;
@@ -119,6 +120,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     const notification = document.createElement('div');
                     notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
                     notification.textContent = '🌟 Super luck activated for 10 seconds! 🌟';
+                    document.body.appendChild(notification);
+
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
+                } else {
+                    console.error('Failed to activate super luck:', data.error);
+                }
+            } catch (error) {
+                console.error('Error activating super luck:', error);
+            }
+        });
+    }
+
+    if (epicSecretButton2) {
+        epicSecretButton2.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/activate-super-luck/epic2');
+                const data = await response.json();
+
+                if (response.ok) {
+                    epicSecretButton2.disabled = true;
+                    epicSecretButton2.style.display = 'none';
+
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = '🌟 300x Luck activated for 15 seconds! 🌟';
                     document.body.appendChild(notification);
 
                     setTimeout(() => {
@@ -437,8 +465,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 secretButton.classList.add('d-none');
                 goodSecretButton.classList.add('d-none');
                 epicSecretButton.classList.add('d-none');
+                epicSecretButton2.classList.add('d-none');
                 divineSecretButton.classList.add('d-none');
-                rareSecretButton.classList.add('d-none'); // Add rare secret button handling
+                rareSecretButton.classList.add('d-none'); 
 
                 if (data.result === 'Uncommon') {
                     secretButton.classList.remove('d-none');
@@ -452,9 +481,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     goodSecretButton.style.top = '20px';
                 } else if (data.result === 'Epic') {
                     epicSecretButton.classList.remove('d-none');
-                    // Position the button over the 'c' of Epic
-                    epicSecretButton.style.left = '60%';
+                    epicSecretButton2.classList.remove('d-none');
+                    // Position the buttons over the 'c' of Epic
+                    epicSecretButton.style.left = '50%';
                     epicSecretButton.style.top = '20px';
+                    epicSecretButton2.style.left = '60%';
+                    epicSecretButton2.style.top = '20px';
                 } else if (data.result === 'Divine') {
                     divineSecretButton.classList.remove('d-none');
                     // Position the button over the 'i' of Divine
@@ -468,7 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Check for high-rarity rolls and apply special effects
-                const highRarities = ['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret', 'Hax', 'Special', 'Chill']; //Added new rarities
+                const highRarities = ['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret', 'Hax', 'Special', 'Chill']; 
                 if (highRarities.includes(data.result)) {
                     // Create supernova effect
                     const supernova = document.createElement('div');
@@ -552,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Remove supernova after animation
                     setTimeout(() => {
                         supernova.remove();
-                    }, 2000); // Increased to 2 seconds to match CSS animation
+                    }, 2000); 
 
                     // Add mythic animation to the text
                     rarityText.classList.add('mythic-animation');
@@ -614,6 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
         secretButton.classList.add('d-none');
         goodSecretButton.classList.add('d-none');
         epicSecretButton.classList.add('d-none');
+        epicSecretButton2.classList.add('d-none');
         divineSecretButton.classList.add('d-none');
         rareSecretButton.classList.add('d-none');
 
@@ -627,6 +660,7 @@ document.addEventListener('DOMContentLoaded', function() {
             goodSecretButton.classList.remove('d-none');
         } else if (result === 'Epic') {
             epicSecretButton.classList.remove('d-none');
+            epicSecretButton2.classList.remove('d-none');
         } else if (result === 'Divine') {
             divineSecretButton.classList.remove('d-none');
         } else if (result === 'Rare') {
@@ -665,7 +699,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Legendary Button Functionality
     legendaryButton.addEventListener('click', async function() {
         try {
-            const response = await fetch('/roll/legendary'); // Assumed endpoint
+            const response = await fetch('/roll/legendary'); 
             const data = await response.json();
 
             if (response.ok) {

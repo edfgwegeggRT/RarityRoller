@@ -12,7 +12,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 
 RARITY_TIERS = {
-    "Hax": {"chance": 2500000, "color": "linear-gradient(to right, #006400, #00FF00)", "value": 1000000},  # Gradient dark green and light green
+    "Hax": {"chance": 2500000, "color": "#008800", "value": 1000000},  # Dark green (switched from gradient to solid)
     "Special": {"chance": 500000, "color": "#87CEEB", "value": 250000},  # Chill blue
     "Secret": {"chance": 1000000, "color": "#FFD700", "value": 500000},  # Gold
     "Ancient": {"chance": 100000, "color": "#4B0082", "value": 50000},  # Indigo
@@ -81,12 +81,18 @@ def calculate_luck(roll_count):
     if session.get('super_luck_until'):
         # Check if super luck is still active
         if datetime.now() < datetime.fromisoformat(session['super_luck_until']):
-            multiplier = 250 if session.get('epic_multiplier') else 100  # Use 250x for Epic, 100x for others
+            if session.get('epic_multiplier2'):
+                multiplier = 300  # Use 300x for Epic2
+            elif session.get('epic_multiplier'):
+                multiplier = 250  # Use 250x for Epic
+            else:
+                multiplier = 100  # Use 100x for others
             return total_base_luck * multiplier
         else:
-            # Clear expired super luck and multiplier flag
+            # Clear expired super luck and multiplier flags
             session.pop('super_luck_until', None)
             session.pop('epic_multiplier', None)
+            session.pop('epic_multiplier2', None)
     return total_base_luck
 
 @app.route('/sell/<rarity>')
@@ -334,9 +340,13 @@ def activate_super_luck(button_type):
         # Set super luck expiration
         session['super_luck_until'] = (datetime.now() + timedelta(seconds=10)).isoformat()
 
-        # Set epic multiplier flag if it's the epic button
+        # Set epic multiplier flags based on button type
         if button_type == 'epic':
             session['epic_multiplier'] = True
+        elif button_type == 'epic2':
+            session['epic_multiplier2'] = True
+            # For epic2, extend duration to 15 seconds
+            session['super_luck_until'] = (datetime.now() + timedelta(seconds=15)).isoformat()
 
         session.modified = True
 
