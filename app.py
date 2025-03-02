@@ -9,7 +9,8 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
+# Generate a secure random secret key
+app.secret_key = os.urandom(24)
 
 RARITY_TIERS = {
     "LEBRON": {"chance": 50000000, "color": "#800080", "value": 10000000},  # Purple color, highest value
