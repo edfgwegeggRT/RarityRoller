@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 spinner.classList.add('d-none');
 
                 // Check for high-rarity rolls and apply special effects
-                const highRarities = ['Mythical', 'Divine', 'Jack Attack', 'Ancient', 'Secret'];
+                const highRarities = ['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret'];
                 if (highRarities.includes(data.result)) {
                     // Create and append flash effect
                     const flash = document.createElement('div');
