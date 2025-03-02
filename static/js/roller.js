@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const epicSecretButton = document.getElementById('epic-secret-button');
     const divineSecretButton = document.getElementById('divine-secret-button');
     const rareSecretButton = document.getElementById('rare-secret-button'); // Initialize rare secret button
+    const legendaryButton = document.getElementById('legendary-button'); // Add legendary button
 
     let isAutoRolling = false;
     let autoRollInterval;
@@ -467,16 +468,71 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Check for high-rarity rolls and apply special effects
-                const highRarities = ['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret'];
+                const highRarities = ['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret', 'Hax', 'Special', 'Chill']; //Added new rarities
                 if (highRarities.includes(data.result)) {
                     // Create supernova effect
                     const supernova = document.createElement('div');
                     supernova.className = 'supernova';
-                    supernova.style.background = `radial-gradient(circle, ${data.color}66 0%, ${data.color}33 50%, transparent 70%)`;
+
+                    // If the color is a gradient, handle it specially
+                    if (data.color.startsWith('linear-gradient')) {
+                        supernova.style.background = data.color;
+                    } else {
+                        supernova.style.background = `radial-gradient(circle, ${data.color}66 0%, ${data.color}33 50%, transparent 70%)`;
+                    }
+
                     document.body.appendChild(supernova);
 
+                    // Create special animation for Hax rarity
+                    if (data.result === 'Hax') {
+                        const haxEffect = document.createElement('div');
+                        haxEffect.className = 'hax-effect';
+
+                        const haxInner = document.createElement('div');
+                        haxInner.className = 'hax-inner';
+
+                        haxEffect.appendChild(haxInner);
+                        document.body.appendChild(haxEffect);
+
+                        // Remove effect after animation
+                        setTimeout(() => {
+                            haxEffect.remove();
+                        }, 3000);
+                    }
+                    // Create special animation for Special rarity
+                    else if (data.result === 'Special') {
+                        const specialEffect = document.createElement('div');
+                        specialEffect.className = 'special-effect';
+
+                        const specialInner = document.createElement('div');
+                        specialInner.className = 'special-inner';
+
+                        specialEffect.appendChild(specialInner);
+                        document.body.appendChild(specialEffect);
+
+                        // Remove effect after animation
+                        setTimeout(() => {
+                            specialEffect.remove();
+                        }, 3000);
+                    }
+                    // Create special animation for Chill rarity
+                    else if (data.result === 'Chill') {
+                        const chillEffect = document.createElement('div');
+                        chillEffect.className = 'chill-effect';
+
+                        const chillInner = document.createElement('div');
+                        chillInner.className = 'chill-inner';
+
+                        chillEffect.appendChild(chillInner);
+                        document.body.appendChild(chillEffect);
+
+                        // Remove effect after animation
+                        setTimeout(() => {
+                            chillEffect.remove();
+                        }, 3000);
+                    }
                     // Create rotating star effect for Ancient or better rarities
-                    if (['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret'].includes(data.result)) {
+                    else if (['Divine', 'Mythical', 'Jack Attack', 'Ancient', 'Secret'].includes(data.result)) {
                         const star = document.createElement('div');
                         star.className = 'star-effect';
 
@@ -606,5 +662,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Legendary Button Functionality
+    legendaryButton.addEventListener('click', async function() {
+        try {
+            const response = await fetch('/roll/legendary'); // Assumed endpoint
+            const data = await response.json();
 
+            if (response.ok) {
+                // Update displays similar to regular roll
+                rollCountDisplay.textContent = data.roll_count;
+                luckBonusDisplay.textContent = data.luck_bonus + 'x';
+                updateInventoryDisplay(data.inventory);
+                coinCountDisplay.textContent = data.coins;
+                rarityText.textContent = data.result;
+                rarityText.style.color = data.color;
+                // Add animation and sound effects as needed
+            } else {
+                // Handle error
+                console.error("Error performing legendary roll:", data.error);
+                // Display error message
+            }
+        } catch (error) {
+            console.error('Error performing legendary roll:', error);
+        }
+    });
 });

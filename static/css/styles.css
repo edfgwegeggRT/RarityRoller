@@ -211,6 +211,42 @@
   }
 }
 
+@keyframes pulse-glow {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes color-shift {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+@keyframes snowflake-spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(180deg) scale(1.1);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) scale(1);
+  }
+}
+
 .star-effect {
   position: fixed;
   top: 50%;
@@ -226,4 +262,40 @@
   width: 100%;
   height: 100%;
   clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.hax-effect {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 250px;
+  height: 250px;
+  pointer-events: none;
+  z-index: 1000;
+  animation: pulse-glow 1.5s ease-in-out infinite, color-shift 3s linear infinite;
+}
+
+.hax-inner {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, #006400, #00FF00);
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+}
+
+.special-effect {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 220px;
+  height: 220px;
+  pointer-events: none;
+  z-index: 1000;
+  animation: snowflake-spin 2.5s ease-in-out infinite;
+}
+
+.special-inner {
+  width: 100%;
+  height: 100%;
+  background-color: #87CEEB;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%, 50% 0%, 50% 100%, 0% 50%, 100% 50%);
 }

@@ -12,6 +12,8 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 
 RARITY_TIERS = {
+    "Hax": {"chance": 2500000, "color": "linear-gradient(to right, #006400, #00FF00)", "value": 1000000},  # Gradient dark green and light green
+    "Special": {"chance": 500000, "color": "#87CEEB", "value": 250000},  # Chill blue
     "Secret": {"chance": 1000000, "color": "#FFD700", "value": 500000},  # Gold
     "Ancient": {"chance": 100000, "color": "#4B0082", "value": 50000},  # Indigo
     "Jack Attack": {"chance": 50000, "color": "#008000", "value": 25000},  # Green
@@ -385,6 +387,26 @@ def activate_rare_luck():
         logger.error(f"Error activating rare luck: {e}")
         return jsonify({"error": "Failed to activate rare luck"}), 500
 
+@app.route('/activate-legendary-luck')
+def activate_legendary_luck():
+    try:
+        response = make_response(jsonify({"success": True}))
+
+        # Check if legendary luck was already used
+        if request.cookies.get('used_legendary_luck'):
+            return jsonify({"error": "Legendary luck already used"}), 400
+
+        # Set legendary luck bonus for one roll
+        session['rare_luck_boost'] = 10000
+        session.modified = True
+
+        # Set cookie to track usage
+        response.set_cookie('used_legendary_luck', 'true', max_age=365*24*60*60)  # 1 year expiry
+        return response
+    except Exception as e:
+        logger.error(f"Error activating legendary luck: {e}")
+        return jsonify({"error": "Failed to activate legendary luck"}), 500
+
 
 @app.route('/reset-cookies')
 def reset_cookies():
@@ -396,6 +418,7 @@ def reset_cookies():
         response.delete_cookie('used_super_luck_epic')
         response.delete_cookie('used_divine_luck')
         response.delete_cookie('used_rare_luck')
+        response.delete_cookie('used_legendary_luck')
         return response
     except Exception as e:
         logger.error(f"Error resetting cookies: {e}")
