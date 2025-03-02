@@ -103,7 +103,7 @@
                     <div class="card-body">
                         <div class="shop-item mb-3">
                             <h5>Purchase Luck (+1x)</h5>
-                            <p>Cost: <span id="luck-cost">{{ 50 * (4 ** purchased_luck) }}</span> <i class="fas fa-coins text-warning"></i></p>
+                            <p>Cost: <span id="luck-cost">{{ 50 * (2.5 ** purchased_luck) | int }}</span> <i class="fas fa-coins text-warning"></i></p>
                             <button id="buy-luck-button" class="btn btn-outline-warning">
                                 Buy Luck Boost
                             </button>
