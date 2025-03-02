@@ -807,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.auto_sold) {
                     const notification = document.createElement('div');
                     notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = ``Auto-sold ${data.result} for ${data.auto_sell_value} coins!`;
+                    notification.textContent =`Auto-sold ${data.result} for ${data.auto_sell_value} coins!`;
                     document.body.appendChild(notification);
                     setTimeout(() => notification.remove(), 2000);
                 }
@@ -997,83 +997,24 @@ document.addEventListener('DOMContentLoaded', function() {
         // Remove any existing animations first
         removeEquippedAnimations();
 
-        // Create container for the animation
-        const animationContainer = document.getElementById('equipped-animation-container');
-        animationContainer.innerHTML = ''; // Clear previous animations
+        // Get the rarity color from the rarity tiers data
+        let rarityColor = '#cccccc'; // Default color
 
-        const rarityColor = rarityColors[rarity];
+        // Find all badge elements and match the one for our rarity
+        const badges = document.querySelectorAll('.badge');
+        badges.forEach(badge => {
+            if (badge.textContent.trim() === rarity) {
+                rarityColor = window.getComputedStyle(badge).backgroundColor;
+            }
+        });
 
-        // Add color overlay to the entire screen
+        // Create a simple overlay with the rarity color
         const overlay = document.createElement('div');
         overlay.className = 'rarity-overlay';
         overlay.id = 'rarity-overlay';
-        overlay.style.setProperty('--rarity-color', rarityColor);
+        overlay.style.backgroundColor = rarityColor;
+        overlay.style.opacity = '0.5';
         document.body.appendChild(overlay);
-
-        // Create animation element
-        const animation = document.createElement('div');
-        animation.className = `${rarity.toLowerCase().replace(/\s+/g, '-')}-equipped-animation equipped-animation`;
-        animation.id = 'current-equipped-animation';
-
-        // Number of particles based on rarity tier
-        let particleCount = 10; // Base count
-
-        // Adjust animation complexity based on rarity tier
-        if (['Mythical', 'Divine', 'Jack Attack', 'Ancient', 'Special'].includes(rarity)) {
-            particleCount = 30;
-        } else if (['Legendary', 'Epic', 'Rare'].includes(rarity)) {
-            particleCount = 20;
-        }
-
-        // Create particles container
-        const particlesContainer = document.createElement('div');
-        particlesContainer.className = `${rarity.toLowerCase().replace(/\s+/g, '-')}-equipped-particles equipped-particles`;
-
-        // Create individual particles
-        for (let i = 0; i < particleCount; i++) {
-            const particle = document.createElement('div');
-            particle.className = `${rarity.toLowerCase().replace(/\s+/g, '-')}-equipped-particle equipped-particle`;
-            particle.style.backgroundColor = rarityColor;
-
-            // Randomize particle positions and animations
-            const randomDelay = Math.random() * 5;
-            const randomDuration = 5 + Math.random() * 5;
-            const randomSize = 5 + Math.random() * 15;
-            const randomStartPosition = Math.random() * 360;
-
-            particle.style.animationDelay = `${randomDelay}s`;
-            particle.style.animationDuration = `${randomDuration}s`;
-            particle.style.width = `${randomSize}px`;
-            particle.style.height = `${randomSize}px`;
-            particle.style.boxShadow = `0 0 10px ${rarityColor}, 0 0 20px ${rarityColor}`;
-
-            // For high-tier rarities, add custom effects
-            if (['Hyperpigmentation', 'Hax', 'Secret'].includes(rarity)) {
-                particle.style.filter = 'hue-rotate(0deg)';
-                particle.style.animation = `equipped-particle-animation ${randomDuration}s infinite linear, color-shift 3s infinite linear`;
-            }
-
-            if (rarity === 'Mythical') {
-                particle.innerHTML = '★';
-                particle.style.fontSize = `${randomSize}px`;
-                particle.style.display = 'flex';
-                particle.style.alignItems = 'center';
-                particle.style.justifyContent = 'center';
-                particle.style.color = '#FFF';
-                particle.style.textShadow = `0 0 5px ${rarityColor}`;
-            }
-
-            particlesContainer.appendChild(particle);
-        }
-
-        animation.appendChild(particlesContainer);
-        animationContainer.appendChild(animation);
-
-        // Set body effect for highest tier rarities
-        if (['Hyperpigmentation', 'Hax', 'Secret'].includes(rarity)) {
-            document.body.classList.add('special-effect-body');
-            document.body.style.setProperty('--effect-color', rarityColor);
-        }
     }
 
     function removeEquippedAnimations() {
@@ -1081,13 +1022,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (animation) {
             animation.remove();
         }
-        
+
         // Remove screen color overlay
         const overlay = document.getElementById('rarity-overlay');
         if (overlay) {
             overlay.remove();
         }
-        
+
         document.body.classList.remove('special-effect-body');
     }
 
