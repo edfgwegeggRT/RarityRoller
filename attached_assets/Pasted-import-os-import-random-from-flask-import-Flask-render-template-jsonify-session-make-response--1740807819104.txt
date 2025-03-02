@@ -1,0 +1,74 @@
+import os
+import random
+from flask import Flask, render_template, jsonify, session, make_response, request
+import logging
+from datetime import datetime, timedelta
+import uuid
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
+app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
+
+RARITY_TIERS = {
+    # existing rarity tiers...
+}
+
+@app.route('/')
+def index():
+    try:
+        # Ensuring session variables are initialized
+        session.setdefault('roll_count', 0)
+        session.setdefault('inventory', [])
+        session.setdefault('coins', 0)
+        session.setdefault('purchased_luck', 0)
+        session.setdefault('inventory_upgrade', 0)
+        session.setdefault('auto_sell_settings', {rarity: False for rarity in RARITY_TIERS})
+        session.setdefault('locked_items', [])
+        session.setdefault('player_id', str(uuid.uuid4()))
+
+        if 'player_name' not in session:
+            return render_template('set_name.html')  # Redirect to a form to set name
+
+        # Update leaderboards if needed
+        update_leaderboards(session.get('player_id'), session.get('coins', 0), session.get('roll_count', 0))
+
+        return render_template('index.html', 
+                             # existing template variables
+                             player_name=session['player_name'])  # Add player name to context
+    except Exception as e:
+        logger.error(f"Error rendering index: {e}")
+        return "An error occurred", 500
+
+@app.route('/set-name', methods=['POST'])
+def set_name():
+    try:
+        name = request.form.get('name')
+        if name:
+            session['player_name'] = name
+            return jsonify({"success": True, "message": "Name set for leaderboard."}), 200
+        return jsonify({"error": "Name cannot be empty."}), 400
+    except Exception as e:
+        logger.error(f"Error setting name: {e}")
+        return jsonify({"error": "Failed to set name"}), 500
+
+# Update the locking functionality to ensure it works properly
+@app.route('/lock-item/<rarity>')
+def lock_item(rarity):
+    try:
+        if rarity in session['inventory'] and rarity not in session['locked_items']:
+            session['locked_items'].append(rarity)
+            session.modified = True
+            return jsonify({"success": True, "locked_items": session['locked_items']})
+        return jsonify({"error": "Item not in inventory or already locked"}), 400
+    except Exception as e:
+        logger.error(f"Error locking item {rarity}: {e}")
+        return jsonify({"error": "Failed to lock item"}), 500
+
+# Other existing routes...
+
+if __name__ == '__main__':
+    logger.info(f"Starting server on port 5000")
+    app.run(host='0.0.0.0', port=5000, debug=True)
