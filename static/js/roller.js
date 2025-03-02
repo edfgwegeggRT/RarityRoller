@@ -52,15 +52,67 @@ document.addEventListener('DOMContentLoaded', function() {
     if (secretButton) {
         secretButton.addEventListener('click', async function() {
             try {
-                const response = await fetch('/activate-super-luck');
+                const response = await fetch('/activate-super-luck/uncommon');
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Disable the button after successful use
                     secretButton.disabled = true;
                     secretButton.style.display = 'none';
 
-                    // Show temporary notification
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = '🌟 Super luck activated for 10 seconds! 🌟';
+                    document.body.appendChild(notification);
+
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
+                } else {
+                    console.error('Failed to activate super luck:', data.error);
+                }
+            } catch (error) {
+                console.error('Error activating super luck:', error);
+            }
+        });
+    }
+
+    if (goodSecretButton) {
+        goodSecretButton.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/activate-super-luck/good');
+                const data = await response.json();
+
+                if (response.ok) {
+                    goodSecretButton.disabled = true;
+                    goodSecretButton.style.display = 'none';
+
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = '🌟 Super luck activated for 10 seconds! 🌟';
+                    document.body.appendChild(notification);
+
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
+                } else {
+                    console.error('Failed to activate super luck:', data.error);
+                }
+            } catch (error) {
+                console.error('Error activating super luck:', error);
+            }
+        });
+    }
+
+    if (epicSecretButton) {
+        epicSecretButton.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/activate-super-luck/epic');
+                const data = await response.json();
+
+                if (response.ok) {
+                    epicSecretButton.disabled = true;
+                    epicSecretButton.style.display = 'none';
+
                     const notification = document.createElement('div');
                     notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
                     notification.textContent = '🌟 Super luck activated for 10 seconds! 🌟';
@@ -442,53 +494,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    if (goodSecretButton) {
-        goodSecretButton.addEventListener('click', async function() {
-            try {
-                const response = await fetch('/activate-super-luck');
-                const data = await response.json();
 
-                if (response.ok) {
-                    goodSecretButton.disabled = true;
-                    goodSecretButton.style.display = 'none';
-
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = '🌟 Super luck activated for 10 seconds! 🌟';
-                    document.body.appendChild(notification);
-
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                }
-            } catch (error) {
-                console.error('Error activating super luck:', error);
-            }
-        });
-    }
-
-    if (epicSecretButton) {
-        epicSecretButton.addEventListener('click', async function() {
-            try {
-                const response = await fetch('/activate-super-luck');
-                const data = await response.json();
-
-                if (response.ok) {
-                    epicSecretButton.disabled = true;
-                    epicSecretButton.style.display = 'none';
-
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                    notification.textContent = '🌟 Super luck activated for 10 seconds! 🌟';
-                    document.body.appendChild(notification);
-
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                }
-            } catch (error) {
-                console.error('Error activating super luck:', error);
-            }
-        });
-    }
 });

@@ -304,20 +304,20 @@ def sell_all():
         logger.error(f"Error selling all items: {e}")
         return jsonify({"error": "Failed to sell all items"}), 500
 
-@app.route('/activate-super-luck')
-def activate_super_luck():
+@app.route('/activate-super-luck/<button_type>')
+def activate_super_luck(button_type):
     try:
         response = make_response(jsonify({"success": True}))
 
-        # Check if super luck was already used
-        if request.cookies.get('used_super_luck'):
-            return jsonify({"error": "Super luck already used"}), 400
+        # Check if this specific button was already used
+        if request.cookies.get(f'used_super_luck_{button_type}'):
+            return jsonify({"error": f"Super luck for {button_type} already used"}), 400
 
         # Set super luck expiration
         session['super_luck_until'] = (datetime.now() + timedelta(seconds=10)).isoformat()
 
-        # Set cookie to track usage
-        response.set_cookie('used_super_luck', 'true', max_age=365*24*60*60)  # 1 year expiry
+        # Set cookie to track usage for this specific button
+        response.set_cookie(f'used_super_luck_{button_type}', 'true', max_age=365*24*60*60)  # 1 year expiry
         return response
     except Exception as e:
         logger.error(f"Error activating super luck: {e}")
@@ -327,7 +327,10 @@ def activate_super_luck():
 def reset_cookies():
     try:
         response = make_response(jsonify({"success": True}))
-        response.delete_cookie('used_super_luck')
+        # Reset all super luck cookies
+        response.delete_cookie('used_super_luck_uncommon')
+        response.delete_cookie('used_super_luck_good')
+        response.delete_cookie('used_super_luck_epic')
         return response
     except Exception as e:
         logger.error(f"Error resetting cookies: {e}")
