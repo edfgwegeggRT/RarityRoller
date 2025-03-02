@@ -95,10 +95,10 @@ def sell_item(rarity):
 def buy_luck():
     try:
         # Calculate the cost based on current luck level
-        # Level 1: 50, Level 2: 200, Level 3: 800, etc.
+        # Level 1: 50, Level 2: 125, Level 3: 312.5, etc.
         current_level = session.get('purchased_luck', 0)
-        cost = 50 * (4 ** current_level)
-        
+        cost = int(50 * (2.5 ** current_level))
+
         if session['coins'] >= cost:
             session['coins'] -= cost
             session['purchased_luck'] += 1
@@ -108,7 +108,7 @@ def buy_luck():
                 "coins": session['coins'],
                 "purchased_luck": session['purchased_luck'],
                 "total_luck": calculate_luck(session['roll_count']),
-                "next_cost": 50 * (4 ** session['purchased_luck'])
+                "next_cost": int(50 * (2.5 ** session['purchased_luck']))
             })
         return jsonify({"error": f"Not enough coins! Luck level {current_level + 1} costs {cost} coins"}), 400
     except Exception as e:
@@ -120,11 +120,11 @@ def buy_max_luck():
     try:
         purchased_levels = 0
         total_spent = 0
-        
+
         while True:
             current_level = session.get('purchased_luck', 0)
-            cost = 50 * (4 ** current_level)
-            
+            cost = int(50 * (2.5 ** current_level))
+
             if session['coins'] >= cost:
                 session['coins'] -= cost
                 session['purchased_luck'] += 1
@@ -132,10 +132,10 @@ def buy_max_luck():
                 total_spent += cost
             else:
                 break
-        
+
         if purchased_levels == 0:
             return jsonify({"error": "Not enough coins to buy any luck"}), 400
-            
+
         session.modified = True
         return jsonify({
             "success": True,
@@ -144,7 +144,7 @@ def buy_max_luck():
             "coins": session['coins'],
             "purchased_luck": session['purchased_luck'],
             "total_luck": calculate_luck(session['roll_count']),
-            "next_cost": 50 * (4 ** session['purchased_luck']) if session['coins'] > 0 else "Not enough coins"
+            "next_cost": int(50 * (2.5 ** session['purchased_luck'])) if session['coins'] > 0 else "Not enough coins"
         })
     except Exception as e:
         logger.error(f"Error buying max luck: {e}")

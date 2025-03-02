@@ -11,8 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const coinCountDisplay = document.getElementById('coin-count');
     const buyLuckButton = document.getElementById('buy-luck-button');
     const sellAllButton = document.getElementById('sell-all-button');
-    const autoSellToggles = document.querySelectorAll('.auto-sell-toggle'); // Added
-
+    const autoSellToggles = document.querySelectorAll('.auto-sell-toggle'); 
 
     let isAutoRolling = false;
     let autoRollInterval;
@@ -331,6 +330,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 rarityText.classList.remove('d-none');
                 spinner.classList.add('d-none');
 
+                // Check for high-rarity rolls and apply special effects
+                const highRarities = ['Mythical', 'Divine', 'Jack Attack', 'Ancient', 'Secret'];
+                if (highRarities.includes(data.result)) {
+                    // Create and append flash effect
+                    const flash = document.createElement('div');
+                    flash.className = 'screen-flash';
+                    document.body.appendChild(flash);
+
+                    // Remove flash effect after animation
+                    setTimeout(() => {
+                        flash.remove();
+                    }, 500);
+
+                    // Add mythic animation to the text
+                    rarityText.classList.add('mythic-animation');
+
+                    // Remove mythic animation after effect completes
+                    setTimeout(() => {
+                        rarityText.classList.remove('mythic-animation');
+                    }, 2000);
+
+                    // Play celebration sound
+                    const audio = new Audio('data:audio/wav;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAAGhgBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVWqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr///////////////////////////////////////////8AAAA5TEFNRTMuMTAwA8MAAAAAAAAAABQgJAi4TQABzAAAAob6xLBzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//sQxAADwAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==');
+                    audio.play();
+                }
+
                 // Show auto-sell notification if applicable
                 if (data.auto_sold) {
                     const notification = document.createElement('div');
@@ -340,14 +365,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(() => notification.remove(), 2000);
                 }
 
-                // Add animation class
+                // Add standard roll animation
                 rarityText.classList.add('roll-animation');
             } else {
                 throw new Error(data.error || 'Failed to roll');
             }
 
-
-            // Remove animation class after it completes
+            // Remove standard animation class after it completes
             setTimeout(() => {
                 rarityText.classList.remove('roll-animation');
             }, 500);
