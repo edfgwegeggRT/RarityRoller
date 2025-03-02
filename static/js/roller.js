@@ -1,3 +1,40 @@
+
+// Add event listener for mythical secret button
+document.addEventListener('DOMContentLoaded', function() {
+    const mythicalButton = document.getElementById('mythical-secret-button');
+    if (mythicalButton) {
+        mythicalButton.addEventListener('click', function() {
+            // Hide the button after click
+            this.classList.add('d-none');
+            
+            // Call the API to activate mythical luck
+            fetch('/activate-mythical-luck')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success notification
+                        const notification = document.createElement('div');
+                        notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                        notification.textContent = '🔥 x500000 Luck boost activated for 1 roll! 🔥';
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 3000);
+                    } else {
+                        throw new Error(data.error);
+                    }
+                })
+                .catch(error => {
+                    // Show error notification
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = error.message || 'Failed to activate mythical luck';
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 3000);
+                });
+        });
+    }
+});
+
+
 document.addEventListener('DOMContentLoaded', function() {
     const rollButton = document.getElementById('roll-button');
     const autoRollButton = document.getElementById('auto-roll-button');
@@ -630,42 +667,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 2000); 
 
                     // Add mythic animation to the text
+                    rarityText.classList.add('mythic-animation');
+                    
+                    // Check if the result is Mythical to show the secret button
                     if (data.result === 'Mythical') {
                         // Show the mythical secret button
-                        document.getElementById('mythical-secret-button').classList.remove('d-none');
-                        
-                        // Add click event for the mythical secret button
-                        document.getElementById('mythical-secret-button').addEventListener('click', function() {
-                            // Hide the button after click
-                            this.classList.add('d-none');
-                            
-                            // Call the API to activate mythical luck
-                            fetch('/activate-mythical-luck')
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        // Show success notification
-                                        const notification = document.createElement('div');
-                                        notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                                        notification.textContent = 'x500000 Luck boost activated for next roll!';
-                                        document.body.appendChild(notification);
-                                        setTimeout(() => notification.remove(), 3000);
-                                    } else {
-                                        throw new Error(data.error);
-                                    }
-                                })
-                                .catch(error => {
-                                    // Show error notification
-                                    const notification = document.createElement('div');
-                                    notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
-                                    notification.textContent = error.message || 'Failed to activate mythical luck';
-                                    document.body.appendChild(notification);
-                                    setTimeout(() => notification.remove(), 3000);
-                                });
-                        });
+                        const mythicalButton = document.getElementById('mythical-secret-button');
+                        if (mythicalButton) {
+                            mythicalButton.classList.remove('d-none');
+                        }
                     }
-                    
-                    rarityText.classList.add('mythic-animation');
 
                     // Remove mythic animation after effect completes
                     setTimeout(() => {
