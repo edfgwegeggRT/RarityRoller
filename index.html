@@ -169,6 +169,22 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Autosave Info Section -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h3><i class="fas fa-save me-2"></i>Autosave</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Game progress is automatically saved to your browser.</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>Last autosave: <span id="last-save-time">Never</span></div>
+                            <button id="reset-game-button" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash me-2"></i>Reset Progress
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Rarity Tiers Section -->
                 <div class="card">
@@ -225,6 +241,17 @@
     <!-- Static version JavaScript - Simple functions for demo purposes -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Check if localStorage is available
+            const isLocalStorageAvailable = (function() {
+                try {
+                    localStorage.setItem('test', 'test');
+                    localStorage.removeItem('test');
+                    return true;
+                } catch(e) {
+                    return false;
+                }
+            })();
+            
             // Populate rarity table
             const rarityTableBody = document.getElementById('rarity-table-body');
             const rarityChances = {
@@ -272,13 +299,101 @@
             const inventoryCountDisplay = document.getElementById('inventory-count');
             const inventoryCapacityDisplay = document.getElementById('inventory-capacity');
             
-            // Simple inventory for demo
+            // Game state variables
             let inventory = [];
             let rollCount = 0;
             let coins = 0;
+            let purchasedLuck = 0;
+            let inventoryUpgrade = 0;
+            let isLuckEnabled = true;
             
             // Track auto-sell settings
             let autoSellSettings = {};
+            
+            // Load saved game data if available
+            if (isLocalStorageAvailable) {
+                loadGameData();
+                
+                // Setup autosave
+                setInterval(saveGameData, 10000); // Autosave every 10 seconds
+            }
+            
+            // Game data save function
+            function saveGameData() {
+                if (!isLocalStorageAvailable) return;
+                
+                const gameData = {
+                    inventory: inventory,
+                    rollCount: rollCount,
+                    coins: coins,
+                    purchasedLuck: purchasedLuck,
+                    inventoryUpgrade: inventoryUpgrade,
+                    isLuckEnabled: isLuckEnabled,
+                    autoSellSettings: autoSellSettings,
+                    lastSave: new Date().toLocaleString()
+                };
+                
+                try {
+                    localStorage.setItem('rarityRollerGame', JSON.stringify(gameData));
+                    document.getElementById('last-save-time').textContent = gameData.lastSave;
+                } catch (e) {
+                    console.error('Failed to save game data:', e);
+                }
+            }
+            
+            // Game data load function
+            function loadGameData() {
+                try {
+                    const savedData = localStorage.getItem('rarityRollerGame');
+                    if (savedData) {
+                        const gameData = JSON.parse(savedData);
+                        
+                        // Restore game state
+                        inventory = gameData.inventory || [];
+                        rollCount = gameData.rollCount || 0;
+                        coins = gameData.coins || 0;
+                        purchasedLuck = gameData.purchasedLuck || 0;
+                        inventoryUpgrade = gameData.inventoryUpgrade || 0;
+                        isLuckEnabled = gameData.isLuckEnabled !== undefined ? gameData.isLuckEnabled : true;
+                        autoSellSettings = gameData.autoSellSettings || {};
+                        
+                        // Update UI
+                        rollCountDisplay.textContent = rollCount;
+                        document.getElementById('coin-count').textContent = coins;
+                        document.getElementById('luck-bonus').textContent = (1 + purchasedLuck) + 'x';
+                        document.getElementById('inventory-capacity').textContent = 3 + inventoryUpgrade;
+                        document.getElementById('displayed-capacity').textContent = 3 + inventoryUpgrade;
+                        document.getElementById('last-save-time').textContent = gameData.lastSave || 'Unknown';
+                        
+                        // Update luck status display
+                        const luckStatus = document.getElementById('luck-status');
+                        if (isLuckEnabled) {
+                            luckStatus.className = 'badge bg-success';
+                            luckStatus.textContent = 'ON';
+                        } else {
+                            luckStatus.className = 'badge bg-danger';
+                            luckStatus.textContent = 'OFF';
+                        }
+                        
+                        // Update auto-sell toggles
+                        document.querySelectorAll('.auto-sell-toggle').forEach(button => {
+                            const rarity = button.dataset.rarity;
+                            if (autoSellSettings[rarity]) {
+                                button.classList.remove('btn-outline-secondary');
+                                button.classList.add('btn-success');
+                                button.innerHTML = '<i class="fas fa-check-circle"></i> ON';
+                            }
+                        });
+                        
+                        // Update inventory display
+                        updateInventoryDisplay();
+                        
+                        console.log('Game data loaded successfully');
+                    }
+                } catch (e) {
+                    console.error('Failed to load game data:', e);
+                }
+            }
             
             // Roll button click handler
             rollButton.addEventListener('click', function() {
@@ -333,6 +448,11 @@
                     // Special effects for high rarities
                     if (['Mythical', 'Divine', 'Legendary', 'Epic'].includes(result)) {
                         createExplosion();
+                    }
+                    
+                    // Autosave
+                    if (isLocalStorageAvailable) {
+                        saveGameData();
                     }
                 }, 800);
             });
@@ -596,6 +716,11 @@
                         notification.textContent = `Auto-sell enabled for ${rarity} items`;
                         document.body.appendChild(notification);
                         setTimeout(() => notification.remove(), 2000);
+                        
+                        // Autosave
+                        if (isLocalStorageAvailable) {
+                            saveGameData();
+                        }
                     } else {
                         // Turn off auto-sell for this rarity
                         this.classList.remove('btn-success');
@@ -609,8 +734,65 @@
                         notification.textContent = `Auto-sell disabled for ${rarity} items`;
                         document.body.appendChild(notification);
                         setTimeout(() => notification.remove(), 2000);
+                        
+                        // Autosave
+                        if (isLocalStorageAvailable) {
+                            saveGameData();
+                        }
                     }
                 });
+            });
+            
+            // Reset game button
+            document.getElementById('reset-game-button').addEventListener('click', function() {
+                // Ask for confirmation
+                if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+                    // Reset all game variables
+                    inventory = [];
+                    rollCount = 0;
+                    coins = 0;
+                    purchasedLuck = 0;
+                    inventoryUpgrade = 0;
+                    isLuckEnabled = true;
+                    autoSellSettings = {};
+                    
+                    // Update UI
+                    rollCountDisplay.textContent = rollCount;
+                    document.getElementById('coin-count').textContent = coins;
+                    document.getElementById('luck-bonus').textContent = '1x';
+                    document.getElementById('inventory-capacity').textContent = '3';
+                    document.getElementById('displayed-capacity').textContent = '3';
+                    document.getElementById('luck-cost').textContent = '50';
+                    document.getElementById('storage-cost').textContent = '100';
+                    
+                    // Reset auto-sell toggles
+                    document.querySelectorAll('.auto-sell-toggle').forEach(button => {
+                        button.classList.remove('btn-success');
+                        button.classList.add('btn-outline-secondary');
+                        button.innerHTML = '<i class="fas fa-times-circle"></i> OFF';
+                    });
+                    
+                    // Reset luck toggle
+                    const luckStatus = document.getElementById('luck-status');
+                    luckStatus.className = 'badge bg-success';
+                    luckStatus.textContent = 'ON';
+                    
+                    // Clear inventory display
+                    updateInventoryDisplay();
+                    
+                    // Clear localStorage if available
+                    if (isLocalStorageAvailable) {
+                        localStorage.removeItem('rarityRollerGame');
+                        document.getElementById('last-save-time').textContent = 'Never';
+                    }
+                    
+                    // Show reset notification
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-warning position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = 'Game progress has been reset!';
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 3000);
+                }
             });
             
             // Explosion effect for high rarities
