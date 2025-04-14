@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rarity Roller Game</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="static/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Add rarity data for JavaScript -->
+    <script>
+        const rarityColors = {
+            "LEBRON": "#800080",
+            "Hyperpigmentation": "#D2B48C",
+            "Hax": "#008800",
+            "Secret": "#FFD700",
+            "Special": "#87CEEB",
+            "Ancient": "#4B0082",
+            "Jack Attack": "#008000",
+            "Mythical": "#FF0000",
+            "Divine": "#E6E6FA",
+            "Legendary": "#FFA500",
+            "Epic": "#800080",
+            "Rare": "#0000FF",
+            "Good": "#008000",
+            "Uncommon": "#808080"
+        };
+        const rarityValues = {
+            "LEBRON": 10000000,
+            "Hyperpigmentation": 5000000,
+            "Hax": 1000000,
+            "Secret": 500000,
+            "Special": 250000,
+            "Ancient": 50000,
+            "Jack Attack": 25000,
+            "Mythical": 5000,
+            "Divine": 2500,
+            "Legendary": 500,
+            "Epic": 50,
+            "Rare": 10,
+            "Good": 2,
+            "Uncommon": 1
+        };
+    </script>
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 text-center">
+                <h1 class="mb-4">Rarity Roller</h1>
+
+                <!-- Stats Section -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h5><i class="fas fa-coins text-warning"></i> Coins: <span id="coin-count">0</span></h5>
+                            </div>
+                            <div class="col">
+                                <h5><i class="fas fa-dice"></i> Rolls: <span id="roll-count">0</span></h5>
+                            </div>
+                            <div class="col">
+                                <h5><i class="fas fa-star"></i> Luck: <span id="luck-bonus">1.0x</span></h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Game Section -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div id="result-display" class="mb-4">
+                            <!-- Secret Buttons -->
+                            <div class="position-relative">
+                                <button id="secret-button" class="secret-button d-none"></button>
+                                <button id="good-secret-button" class="secret-button d-none"></button>
+                                <button id="epic-secret-button" class="secret-button d-none"></button>
+                                <button id="epic-secret-button2" class="secret-button d-none"></button>
+                                <button id="divine-secret-button" class="secret-button d-none"></button>
+                                <button id="divine-secret-button2" class="secret-button d-none"></button>
+                                <button id="rare-secret-button" class="secret-button d-none"></button>
+                                <button id="legendary-secret-button" class="secret-button d-none"></button>
+                                <button id="legendary-secret-button2" class="secret-button d-none"></button>
+                                <button id="mythical-secret-button" class="secret-button d-none" title="Secret x500000 roll"></button>
+                                <button id="lebron-secret-button" class="secret-button d-none" title="Secret LEBRON roll"></button>
+                                <h2 class="display-4" id="rarity-text">Roll to Begin!</h2>
+                            </div>
+                            <div class="spinner-border d-none" id="spinner" role="status">
+                                <span class="visually-hidden">Rolling...</span>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button id="roll-button" class="btn btn-primary btn-lg">
+                                <i class="fas fa-dice me-2"></i>Roll!
+                            </button>
+                            <button id="auto-roll-button" class="btn btn-secondary btn-lg disabled" disabled>
+                                <i class="fas fa-sync-alt me-2"></i>Auto Roll
+                                <small>(Unlocks at 50 rolls)</small>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily Reward Section -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5>Daily Reward</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Claim your daily reward to get a free roll with x1000 luck bonus!</p>
+                        <div id="daily-reward-status">
+                            <button id="claim-daily-reward" class="btn btn-success">Claim Daily Reward</button>
+                        </div>
+                        <div id="daily-reward-result" class="mt-3" style="display: none;">
+                            <div class="alert alert-success">
+                                <h5>You got: <span id="daily-reward-rarity"></span></h5>
+                                <p>Applied luck: <span id="daily-reward-luck"></span>x</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Section -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3>Inventory (<span id="inventory-count">0</span>/<span id="inventory-capacity">3</span>)</h3>
+                        <button id="sell-all-button" class="btn btn-warning">Sell All</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="inventory-items" class="d-flex flex-wrap gap-2 justify-content-center">
+                            <!-- Inventory items will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shop Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Luck Shop</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="shop-item mb-3">
+                            <h5>Purchase Luck (+1x)</h5>
+                            <p>Cost: <span id="luck-cost">50</span> <i class="fas fa-coins text-warning"></i></p>
+                            <button id="buy-luck-button" class="btn btn-outline-warning">
+                                Buy Luck Boost
+                            </button>
+                            <button id="buy-max-luck-button" class="btn btn-outline-warning mt-2">
+                                Buy Max Luck
+                            </button>
+                        </div>
+                        <div class="shop-item mb-3">
+                            <h5>Luck Toggle</h5>
+                            <p>Current status: <span id="luck-status" class="badge bg-success">ON</span></p>
+                            <button id="toggle-luck-button" class="btn btn-outline-primary">
+                                Toggle Luck On/Off
+                            </button>
+                        </div>
+                        <div class="shop-item">
+                            <h5>Upgrade Storage (+1 slot)</h5>
+                            <p>Current capacity: <span id="displayed-capacity">3</span> slots</p>
+                            <p>Cost: <span id="storage-cost">100</span> <i class="fas fa-coins text-warning"></i></p>
+                            <button id="buy-storage-button" class="btn btn-outline-warning">
+                                Buy Storage Slot
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rarity Tiers Section -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Rarity Tiers</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Rarity</th>
+                                        <th>Base Chance</th>
+                                        <th>Value</th>
+                                        <th>Auto-Sell</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rarity-table-body">
+                                    <!-- Rarity tiers will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Game Info Section -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3>About This Game</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Welcome to the Rarity Roller Game! This is a static version of the game for GitHub and other platforms.</p>
+                        <p>The full interactive version can be played on:</p>
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <a href="https://github.com/yourusername/rarity-roller" target="_blank" class="text-decoration-none">
+                                    <i class="fab fa-github me-2"></i>GitHub Repository
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="https://replit.com/@yourusername/rarity-roller" target="_blank" class="text-decoration-none">
+                                    <i class="fas fa-code me-2"></i>Replit (Interactive Version)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Static version JavaScript - Simple functions for demo purposes -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Populate rarity table
+            const rarityTableBody = document.getElementById('rarity-table-body');
+            const rarityChances = {
+                "LEBRON": 50000000,
+                "Hyperpigmentation": 10000000,
+                "Hax": 2500000, 
+                "Secret": 1000000,
+                "Special": 500000,
+                "Ancient": 100000,
+                "Jack Attack": 50000,
+                "Mythical": 10000,
+                "Divine": 5000,
+                "Legendary": 1000,
+                "Epic": 100,
+                "Rare": 20, 
+                "Good": 5,
+                "Uncommon": 2
+            };
+
+            for (const [rarity, chance] of Object.entries(rarityChances)) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <span class="badge" style="background-color: ${rarityColors[rarity]}">
+                            ${rarity}
+                        </span>
+                    </td>
+                    <td>1 in ${chance}</td>
+                    <td>${rarityValues[rarity]} <i class="fas fa-coins text-warning"></i></td>
+                    <td>
+                        <button class="btn btn-sm auto-sell-toggle btn-outline-secondary" data-rarity="${rarity}">
+                            <i class="fas fa-times-circle"></i> OFF
+                        </button>
+                    </td>
+                `;
+                rarityTableBody.appendChild(row);
+            }
+
+            // Roll button functionality (simplified for static version)
+            const rollButton = document.getElementById('roll-button');
+            const rarityText = document.getElementById('rarity-text');
+            const spinner = document.getElementById('spinner');
+            const rollCountDisplay = document.getElementById('roll-count');
+            const inventoryItems = document.getElementById('inventory-items');
+            const inventoryCountDisplay = document.getElementById('inventory-count');
+            const inventoryCapacityDisplay = document.getElementById('inventory-capacity');
+            
+            // Simple inventory for demo
+            let inventory = [];
+            let rollCount = 0;
+            let coins = 0;
+            
+            // Roll button click handler
+            rollButton.addEventListener('click', function() {
+                // Show spinner
+                spinner.classList.remove('d-none');
+                rarityText.classList.add('d-none');
+                
+                // Simulate roll after short delay
+                setTimeout(() => {
+                    // Hide spinner
+                    spinner.classList.add('d-none');
+                    rarityText.classList.remove('d-none');
+                    
+                    // Increment roll count
+                    rollCount++;
+                    rollCountDisplay.textContent = rollCount;
+                    
+                    // Determine result (random rarity with weighted chance)
+                    const result = simulateRoll();
+                    
+                    // Display result
+                    rarityText.textContent = result;
+                    rarityText.style.color = rarityColors[result];
+                    
+                    // Add to inventory if space allows
+                    if (inventory.length < parseInt(inventoryCapacityDisplay.textContent)) {
+                        inventory.push(result);
+                        updateInventoryDisplay();
+                    } else {
+                        // Show inventory full message
+                        const notification = document.createElement('div');
+                        notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                        notification.textContent = 'Inventory full! Sell items to make space.';
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 3000);
+                    }
+                    
+                    // Special effects for high rarities
+                    if (['Mythical', 'Divine', 'Legendary', 'Epic'].includes(result)) {
+                        createExplosion();
+                    }
+                }, 800);
+            });
+            
+            // Simulate a roll with proper weighting
+            function simulateRoll() {
+                const rand = Math.floor(Math.random() * 100);
+                
+                if (rand < 50) return "Uncommon";
+                if (rand < 80) return "Good";
+                if (rand < 90) return "Rare";
+                if (rand < 95) return "Epic";
+                if (rand < 98) return "Legendary";
+                if (rand < 99) return "Divine";
+                return "Mythical";
+            }
+            
+            // Update inventory display
+            function updateInventoryDisplay() {
+                inventoryItems.innerHTML = '';
+                inventoryCountDisplay.textContent = inventory.length;
+                
+                inventory.forEach(rarity => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'inventory-item';
+                    itemDiv.dataset.rarity = rarity;
+                    
+                    const badge = document.createElement('span');
+                    badge.className = 'badge';
+                    badge.style.backgroundColor = rarityColors[rarity];
+                    badge.textContent = rarity;
+                    
+                    const sellButton = document.createElement('button');
+                    sellButton.className = 'btn btn-sm btn-outline-warning sell-button';
+                    sellButton.dataset.rarity = rarity;
+                    sellButton.innerHTML = `Sell (${rarityValues[rarity]} <i class="fas fa-coins text-warning"></i>)`;
+                    
+                    sellButton.addEventListener('click', function() {
+                        // Remove from inventory
+                        const idx = inventory.indexOf(rarity);
+                        if (idx !== -1) {
+                            inventory.splice(idx, 1);
+                        }
+                        
+                        // Add coins
+                        coins += rarityValues[rarity];
+                        document.getElementById('coin-count').textContent = coins;
+                        
+                        // Update display
+                        updateInventoryDisplay();
+                        
+                        // Show notification
+                        const notification = document.createElement('div');
+                        notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                        notification.textContent = `Sold ${rarity} for ${rarityValues[rarity]} coins!`;
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 2000);
+                    });
+                    
+                    itemDiv.appendChild(badge);
+                    itemDiv.appendChild(sellButton);
+                    inventoryItems.appendChild(itemDiv);
+                });
+            }
+            
+            // Sell all button
+            document.getElementById('sell-all-button').addEventListener('click', function() {
+                if (inventory.length === 0) {
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-warning position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = 'No items to sell!';
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 2000);
+                    return;
+                }
+                
+                let value = 0;
+                inventory.forEach(rarity => {
+                    value += rarityValues[rarity];
+                });
+                
+                coins += value;
+                document.getElementById('coin-count').textContent = coins;
+                
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = `Sold all items for ${value} coins!`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+                
+                inventory = [];
+                updateInventoryDisplay();
+            });
+            
+            // Buy luck button
+            document.getElementById('buy-luck-button').addEventListener('click', function() {
+                const luckCost = parseInt(document.getElementById('luck-cost').textContent);
+                
+                if (coins < luckCost) {
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = 'Not enough coins!';
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 2000);
+                    return;
+                }
+                
+                coins -= luckCost;
+                document.getElementById('coin-count').textContent = coins;
+                
+                // Update luck display (simplified)
+                const currentLuck = parseFloat(document.getElementById('luck-bonus').textContent);
+                document.getElementById('luck-bonus').textContent = (currentLuck + 1) + 'x';
+                
+                // Update cost for next purchase
+                const newCost = Math.round(luckCost * 2.5);
+                document.getElementById('luck-cost').textContent = newCost;
+                
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = 'Purchased +1 Luck!';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            });
+            
+            // Buy storage button
+            document.getElementById('buy-storage-button').addEventListener('click', function() {
+                const storageCost = parseInt(document.getElementById('storage-cost').textContent);
+                
+                if (coins < storageCost) {
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = 'Not enough coins!';
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 2000);
+                    return;
+                }
+                
+                coins -= storageCost;
+                document.getElementById('coin-count').textContent = coins;
+                
+                // Update storage capacity
+                const currentCapacity = parseInt(document.getElementById('inventory-capacity').textContent);
+                const newCapacity = currentCapacity + 1;
+                document.getElementById('inventory-capacity').textContent = newCapacity;
+                document.getElementById('displayed-capacity').textContent = newCapacity;
+                
+                // Update cost for next purchase
+                const upgradeLevel = newCapacity - 3; // Base capacity is 3
+                const newCost = Math.round(100 * Math.pow(3, upgradeLevel));
+                document.getElementById('storage-cost').textContent = newCost;
+                
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                notification.textContent = 'Purchased +1 Storage!';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 2000);
+            });
+            
+            // Toggle Luck button
+            document.getElementById('toggle-luck-button').addEventListener('click', function() {
+                const luckStatus = document.getElementById('luck-status');
+                if (luckStatus.classList.contains('bg-success')) {
+                    luckStatus.classList.remove('bg-success');
+                    luckStatus.classList.add('bg-danger');
+                    luckStatus.textContent = 'OFF';
+                } else {
+                    luckStatus.classList.remove('bg-danger');
+                    luckStatus.classList.add('bg-success');
+                    luckStatus.textContent = 'ON';
+                }
+            });
+            
+            // Daily reward button
+            document.getElementById('claim-daily-reward').addEventListener('click', function() {
+                this.disabled = true;
+                
+                setTimeout(() => {
+                    const result = simulateRoll();
+                    
+                    document.getElementById('daily-reward-status').innerHTML = '<p>Next reward available in 24h</p>';
+                    document.getElementById('daily-reward-rarity').textContent = result;
+                    document.getElementById('daily-reward-rarity').style.color = rarityColors[result];
+                    document.getElementById('daily-reward-luck').textContent = '1000';
+                    document.getElementById('daily-reward-result').style.display = 'block';
+                    
+                    // Add to inventory
+                    if (inventory.length < parseInt(inventoryCapacityDisplay.textContent)) {
+                        inventory.push(result);
+                        updateInventoryDisplay();
+                    }
+                    
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = `🎁 Daily reward claimed! You got a ${result} rarity!`;
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 3000);
+                }, 1000);
+            });
+            
+            // Auto-sell toggles
+            document.querySelectorAll('.auto-sell-toggle').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (this.classList.contains('btn-outline-secondary')) {
+                        this.classList.remove('btn-outline-secondary');
+                        this.classList.add('btn-success');
+                        this.innerHTML = '<i class="fas fa-check-circle"></i> ON';
+                    } else {
+                        this.classList.remove('btn-success');
+                        this.classList.add('btn-outline-secondary');
+                        this.innerHTML = '<i class="fas fa-times-circle"></i> OFF';
+                    }
+                });
+            });
+            
+            // Explosion effect for high rarities
+            function createExplosion() {
+                const explosion = document.createElement('div');
+                explosion.className = 'explosion';
+                document.body.appendChild(explosion);
+                
+                setTimeout(() => {
+                    explosion.remove();
+                }, 500);
+            }
+        });
+    </script>
+    
+    <!-- Add static versions of the original JS for GitHub demo -->
+    <script src="static/js/daily_rewards.js"></script>
+    <script src="static/js/roller.js"></script>
+</body>
+</html>
