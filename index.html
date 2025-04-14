@@ -457,17 +457,55 @@
                 }, 800);
             });
             
-            // Simulate a roll with proper weighting
+            // Simulate a roll with proper weighting and luck consideration
             function simulateRoll() {
-                const rand = Math.floor(Math.random() * 100);
+                // Get current luck multiplier (base luck + permanent bonuses)
+                let luckText = document.getElementById('luck-bonus').textContent;
+                // Extract the base multiplier (handles both "5x" and "5x +1000x" formats)
+                let luckMultiplier = parseFloat(luckText) || 1;
                 
-                if (rand < 50) return "Uncommon";
-                if (rand < 80) return "Good";
-                if (rand < 90) return "Rare";
-                if (rand < 95) return "Epic";
-                if (rand < 98) return "Legendary";
-                if (rand < 99) return "Divine";
-                return "Mythical";
+                // Check if luck is enabled
+                const isLuckEnabled = document.getElementById('luck-status').textContent === 'ON';
+                
+                // Add temporary luck boost if available
+                const totalLuck = isLuckEnabled ? (luckMultiplier + tempLuckBoost) : 1;
+                
+                // Implement luck-based roll system
+                // Higher luck = better chance for rare items
+                
+                // First, get a base random number
+                let rand = Math.random() * 10000; // Use a larger range for more precise luck effects
+                
+                // Apply the luck multiplier
+                if (totalLuck > 1) {
+                    // Luck enhances the roll value
+                    rand = rand * totalLuck;
+                    
+                    // Show luck boost effect
+                    if (tempLuckBoost > 0) {
+                        const notification = document.createElement('div');
+                        notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                        notification.textContent = `🔥 APPLYING ${tempLuckBoost}x LUCK BOOST! 🔥`;
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 2000);
+                    }
+                }
+                
+                // Higher values result in better rarities
+                if (rand >= 5000000) return "LEBRON";               // 1 in 50,000,000
+                if (rand >= 1000000) return "Hyperpigmentation";    // 1 in 10,000,000
+                if (rand >= 250000) return "Hax";                   // 1 in 2,500,000
+                if (rand >= 100000) return "Secret";                // 1 in 1,000,000
+                if (rand >= 50000) return "Special";                // 1 in 500,000
+                if (rand >= 10000) return "Ancient";                // 1 in 100,000
+                if (rand >= 5000) return "Jack Attack";             // 1 in 50,000
+                if (rand >= 1000) return "Mythical";                // 1 in 10,000
+                if (rand >= 500) return "Divine";                   // 1 in 5,000
+                if (rand >= 100) return "Legendary";                // 1 in 1,000
+                if (rand >= 10) return "Epic";                      // 1 in 100
+                if (rand >= 2) return "Rare";                       // 1 in 20
+                if (rand >= 0.5) return "Good";                     // 1 in 5
+                return "Uncommon";                                  // 1 in 2
             }
             
             // Update inventory display
@@ -486,6 +524,10 @@
                 'lebron-secret-button': { luckBoost: 1000000, message: '👑 LEBRON LUCK ACTIVATED! 1,000,000x for 1 roll! 👑', oneTime: true }
             };
             
+            // Track temporary luck boosts
+            let tempLuckBoost = 0;
+            let permanentLuckBonus = 0;
+            
             // Setup secret button event listeners
             Object.keys(secretButtons).forEach(buttonId => {
                 const button = document.getElementById(buttonId);
@@ -503,14 +545,58 @@
                         document.body.appendChild(notification);
                         setTimeout(() => notification.remove(), 3000);
                         
-                        // Apply luck boost (in a real app, this would affect the next roll)
-                        // For demo purposes, we'll just show visual effects
+                        // Apply luck boost
+                        if (buttonInfo.permanent) {
+                            // For permanent boosts
+                            permanentLuckBonus += buttonInfo.luckBoost / 10; // Divide by 10 to get a reasonable permanent boost
+                            const baseBonus = 1 + purchasedLuck;
+                            const totalLuck = baseBonus + permanentLuckBonus;
+                            document.getElementById('luck-bonus').textContent = totalLuck.toFixed(1) + 'x';
+                        } else {
+                            // For temporary one-time boosts
+                            tempLuckBoost = buttonInfo.luckBoost;
+                            
+                            // Update UI to show temporary boost
+                            const luckDisplay = document.getElementById('luck-bonus');
+                            const baseLuck = parseFloat(luckDisplay.textContent);
+                            luckDisplay.innerHTML = `${baseLuck}x <span class="text-danger">+${tempLuckBoost}x</span>`;
+                            
+                            // Set up a one-time use for the next roll
+                            const rollButton = document.getElementById('roll-button');
+                            
+                            // Add a visual indicator to the roll button
+                            rollButton.classList.add('btn-danger');
+                            rollButton.innerHTML = '<i class="fas fa-fire"></i> SUPER ROLL';
+                            
+                            // Set up a one-time event that resets after the next roll
+                            const originalClickHandler = rollButton.onclick;
+                            rollButton.onclick = function(e) {
+                                // Let the standard roll happen
+                                if (originalClickHandler) {
+                                    originalClickHandler.call(this, e);
+                                }
+                                
+                                // Reset the temp boost and button appearance after roll
+                                setTimeout(() => {
+                                    tempLuckBoost = 0;
+                                    rollButton.classList.remove('btn-danger');
+                                    rollButton.innerHTML = 'Roll!';
+                                    rollButton.onclick = originalClickHandler;
+                                    
+                                    // Restore original luck display
+                                    const baseBonus = 1 + purchasedLuck;
+                                    const totalLuck = baseBonus + permanentLuckBonus;
+                                    document.getElementById('luck-bonus').textContent = totalLuck.toFixed(1) + 'x';
+                                }, 1000);
+                            };
+                        }
+                        
+                        // Visual effects
                         createExplosion();
                         
-                        // Update luck display if it's a permanent boost
-                        if (buttonInfo.permanent) {
-                            const currentLuck = parseFloat(document.getElementById('luck-bonus').textContent);
-                            document.getElementById('luck-bonus').textContent = (currentLuck + 1) + 'x';
+                        // Autosave
+                        if (isLocalStorageAvailable) {
+                            saveGameData();
                         }
                     });
                 }
@@ -608,9 +694,12 @@
                 coins -= luckCost;
                 document.getElementById('coin-count').textContent = coins;
                 
-                // Update luck display (simplified)
-                const currentLuck = parseFloat(document.getElementById('luck-bonus').textContent);
-                document.getElementById('luck-bonus').textContent = (currentLuck + 1) + 'x';
+                // Increase purchased luck
+                purchasedLuck++;
+                
+                // Calculate and display total luck (base + purchased + permanent bonuses)
+                const totalLuck = (1 + purchasedLuck + permanentLuckBonus).toFixed(1);
+                document.getElementById('luck-bonus').textContent = totalLuck + 'x';
                 
                 // Update cost for next purchase
                 const newCost = Math.round(luckCost * 2.5);
@@ -621,6 +710,11 @@
                 notification.textContent = 'Purchased +1 Luck!';
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 2000);
+                
+                // Autosave
+                if (isLocalStorageAvailable) {
+                    saveGameData();
+                }
             });
             
             // Buy storage button
