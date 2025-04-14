@@ -191,7 +191,7 @@
   clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
 }
 
-/* Add styles for secret buttons */
+/* Add styles for secret buttons - completely invisible */
 .secret-button {
     position: absolute;
     width: 20px;
@@ -199,16 +199,18 @@
     background-color: transparent;
     border: none;
     border-radius: 50%;
-    cursor: pointer;
+    cursor: default; /* Don't show pointer cursor */
     z-index: 100;
-    transition: all 0.2s ease;
     opacity: 0;
+    /* Make sure they're completely invisible */
+    pointer-events: auto; /* Allow clicks but stay invisible */
 }
 
+/* No visual change on hover */
 .secret-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-    opacity: 0.2;
+    background-color: transparent;
+    box-shadow: none;
+    opacity: 0;
 }
 
 /* Style for inventory items */
