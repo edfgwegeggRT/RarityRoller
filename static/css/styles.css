@@ -76,191 +76,37 @@
     height: 4rem;
 }
 
-.secret-button {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 20px;
-    height: 20px;
-    padding: 0;
-    margin: 0;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    opacity: 0;  /* Make it invisible by default */
-    z-index: 100;
-    border-radius: 50%;
-    box-shadow: 0 0 5px rgba(255,255,0,0.5);
-}
-
-.secret-button:hover {
-    opacity: 1; /* Fully visible on hover */
-    background: rgba(255, 255, 0, 0.8);  /* Brighter yellow with transparency */
-    box-shadow: 0 0 10px rgba(255,255,0,1); /* Stronger glow on hover */
-    transform: translateX(-50%) scale(1.2); /* Slight scaling effect on hover */
-}
-
-/* Special hover effect for mythical button */
-#mythical-secret-button:hover::after {
-    content: "x500000";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #FF0000; /* Red color for mythical */
-    font-weight: bold;
-    font-size: 10px;
-}
-
-.inventory-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.inventory-item .badge {
-    font-size: 0.9rem;
-    padding: 0.3rem 0.6rem;
-}
-
-.inventory-item .sell-button {
-    font-size: 0.8rem;
-    padding: 0.2rem 0.5rem;
-}
-
-.shop-item {
-    padding: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.shop-item p {
-    margin-bottom: 0.5rem;
-}
-
-#inventory-items {
-    min-height: 100px;
-}
-
-/* Supernova animation styles */
-.supernova {
+/* Explosion animation */
+.explosion {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 0;
-    height: 0;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(128, 0, 128, 0.8) 0%, rgba(128, 0, 128, 0.4) 50%, transparent 70%);
     border-radius: 50%;
-    z-index: 9999;
     pointer-events: none;
-    animation: supernova-expand 2s ease-out forwards;
+    z-index: 1001;
+    animation: explode 0.5s ease-out forwards;
 }
 
-.supernova::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    animation: supernova-pulse 2s ease-out infinite;
-}
-
-@keyframes supernova-expand {
+@keyframes explode {
     0% {
         width: 0;
         height: 0;
-        opacity: 0.8;
-    }
-    40% {
-        opacity: 0.9;
-        width: 150vmax;
-        height: 150vmax;
-    }
-    70% {
-        opacity: 0.6;
-        width: 250vmax;
-        height: 250vmax;
-    }
-    100% {
-        width: 300vmax;
-        height: 300vmax;
-        opacity: 0;
-    }
-}
-
-@keyframes supernova-pulse {
-    0% {
-        transform: translate(-50%, -50%) scale(0.95);
-        opacity: 0.8;
+        opacity: 1;
     }
     50% {
-        transform: translate(-50%, -50%) scale(1.05);
-        opacity: 0.9;
-    }
-    100% {
-        transform: translate(-50%, -50%) scale(0.95);
+        width: 300px;
+        height: 300px;
         opacity: 0.8;
     }
-}
-/* Hyperpigmentation animation */
-@keyframes hyperpigmentation-pulse {
-  0% {
-    transform: translate(-50%, -50%) scale(1) rotate(0deg);
-    opacity: 0.7;
-    filter: blur(5px) brightness(1.2);
-  }
-  25% {
-    transform: translate(-50%, -50%) scale(1.5) rotate(90deg);
-    opacity: 0.9;
-    filter: blur(0px) brightness(1.5);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1) rotate(180deg);
-    opacity: 0.7;
-    filter: blur(8px) brightness(1.2);
-  }
-  75% {
-    transform: translate(-50%, -50%) scale(1.8) rotate(270deg);
-    opacity: 0.9;
-    filter: blur(0px) brightness(1.5);
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1) rotate(360deg);
-    opacity: 0.7;
-    filter: blur(5px) brightness(1.2);
-  }
-}
-
-.hyperpigmentation-effect {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 300px;
-  height: 300px;
-  pointer-events: none;
-  z-index: 1001;  /* Higher than other effects */
-  animation: hyperpigmentation-pulse 3s infinite;
-}
-
-.hyperpigmentation-inner {
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle, #D2B48C 0%, #A0522D 50%, transparent 80%);
-  border-radius: 50%;
-  box-shadow: 0 0 50px 30px #D2B48C;
+    100% {
+        width: 500px;
+        height: 500px;
+        opacity: 0;
+    }
 }
 
 .hyperpigmentation-particles {
@@ -345,90 +191,41 @@
   clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
 }
 
-.hax-effect {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 250px;
-  height: 250px;
-  pointer-events: none;
-  z-index: 1000;
-  animation: pulse-glow 1.5s ease-in-out infinite, color-shift 3s linear infinite;
+/* Add styles for secret buttons */
+.secret-button {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 100;
 }
 
-.hax-inner {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to right, #006400, #00FF00);
-  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+/* Style for inventory items */
+.inventory-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 10px;
+    transition: transform 0.2s;
 }
 
-.special-effect {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 220px;
-  height: 220px;
-  pointer-events: none;
-  z-index: 1000;
-  animation: snowflake-spin 2.5s ease-in-out infinite;
+.inventory-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.special-inner {
-  width: 100%;
-  height: 100%;
-  background-color: #87CEEB;
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%, 50% 0%, 50% 100%, 0% 50%, 100% 50%);
+.sell-button {
+    margin-top: 8px;
 }
 
-/* LEBRON animation effects */
-.lebron-effect {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(128, 0, 128, 0.2); /* Purple background with transparency */
-    pointer-events: none;
-    z-index: 1000;
-    animation: lebron-pulse 1s ease-in-out infinite;
-}
-
-@keyframes lebron-pulse {
-    0% { opacity: 0.2; }
-    50% { opacity: 0.4; }
-    100% { opacity: 0.2; }
-}
-
-/* Explosion animation */
-.explosion {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(128, 0, 128, 0.8) 0%, rgba(128, 0, 128, 0.4) 50%, transparent 70%);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 1001;
-    animation: explode 0.5s ease-out forwards;
-}
-
-@keyframes explode {
-    0% {
-        width: 0;
-        height: 0;
-        opacity: 1;
-    }
-    50% {
-        width: 300px;
-        height: 300px;
-        opacity: 0.8;
-    }
-    100% {
-        width: 500px;
-        height: 500px;
-        opacity: 0;
-    }
+/* Shop items styling */
+.shop-item {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
 }
