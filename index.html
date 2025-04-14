@@ -489,13 +489,15 @@
                 // Implement luck-based roll system
                 // Higher luck = better chance for rare items
                 
-                // First, get a base random number
-                let rand = Math.random() * 10000; // Use a larger range for more precise luck effects
+                // First, get a base random number (use a much smaller scale)
+                let rand = Math.random() * 100; // Base is 0-100
                 
-                // Apply the luck multiplier
+                // Apply the luck multiplier more conservatively
                 if (totalLuck > 1) {
-                    // Luck enhances the roll value
-                    rand = rand * totalLuck;
+                    // Apply a logarithmic scale to luck to prevent it from getting too overpowered
+                    const scaledLuck = Math.log10(totalLuck) * 10;
+                    // Luck enhances the roll value (but with diminishing returns)
+                    rand = rand + scaledLuck;
                     
                     // Show luck boost effect
                     if (tempLuckBoost > 0) {
@@ -507,21 +509,21 @@
                     }
                 }
                 
-                // Higher values result in better rarities
-                if (rand >= 5000000) return "LEBRON";               // 1 in 50,000,000
-                if (rand >= 1000000) return "Hyperpigmentation";    // 1 in 10,000,000
-                if (rand >= 250000) return "Hax";                   // 1 in 2,500,000
-                if (rand >= 100000) return "Secret";                // 1 in 1,000,000
-                if (rand >= 50000) return "Special";                // 1 in 500,000
-                if (rand >= 10000) return "Ancient";                // 1 in 100,000
-                if (rand >= 5000) return "Jack Attack";             // 1 in 50,000
-                if (rand >= 1000) return "Mythical";                // 1 in 10,000
-                if (rand >= 500) return "Divine";                   // 1 in 5,000
-                if (rand >= 100) return "Legendary";                // 1 in 1,000
-                if (rand >= 10) return "Epic";                      // 1 in 100
-                if (rand >= 2) return "Rare";                       // 1 in 20
-                if (rand >= 0.5) return "Good";                     // 1 in 5
-                return "Uncommon";                                  // 1 in 2
+                // Higher values result in better rarities (scaled down significantly)
+                if (rand >= 99.999998) return "LEBRON";               // Ultra rare
+                if (rand >= 99.99995) return "Hyperpigmentation";     // Extremely rare
+                if (rand >= 99.9996) return "Hax";                    // 1 in 25,000
+                if (rand >= 99.9990) return "Secret";                 // 1 in 10,000
+                if (rand >= 99.998) return "Special";                 // 1 in 5,000
+                if (rand >= 99.99) return "Ancient";                  // 1 in 1,000
+                if (rand >= 99.98) return "Jack Attack";              // 1 in 500
+                if (rand >= 99.9) return "Mythical";                  // 1 in 100
+                if (rand >= 99.8) return "Divine";                    // 1 in 50
+                if (rand >= 99) return "Legendary";                   // 1 in 100
+                if (rand >= 95) return "Epic";                        // 1 in 20
+                if (rand >= 85) return "Rare";                        // 1 in 7
+                if (rand >= 65) return "Good";                        // 1 in 3
+                return "Uncommon";                                    // Common
             }
             
             // Update inventory display
