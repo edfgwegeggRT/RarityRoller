@@ -397,6 +397,17 @@
             
             // Roll button click handler
             rollButton.addEventListener('click', function() {
+                // Check inventory space BEFORE starting the roll animation
+                if (inventory.length >= parseInt(inventoryCapacityDisplay.textContent) && !hasAnyAutoSellEnabled()) {
+                    // Show inventory full message
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                    notification.textContent = 'Inventory full! Sell items or enable auto-sell to make space.';
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 3000);
+                    return; // Prevent rolling with full inventory
+                }
+                
                 // Show spinner
                 spinner.classList.remove('d-none');
                 rarityText.classList.add('d-none');
@@ -431,7 +442,7 @@
                         document.body.appendChild(notification);
                         setTimeout(() => notification.remove(), 2000);
                     } else {
-                        // Add to inventory if space allows
+                        // Add to inventory if space allows (double check)
                         if (inventory.length < parseInt(inventoryCapacityDisplay.textContent)) {
                             inventory.push(result);
                             updateInventoryDisplay();
@@ -456,6 +467,11 @@
                     }
                 }, 800);
             });
+            
+            // Helper function to check if any auto-sell settings are enabled
+            function hasAnyAutoSellEnabled() {
+                return Object.values(autoSellSettings).some(setting => setting === true);
+            }
             
             // Simulate a roll with proper weighting and luck consideration
             function simulateRoll() {
