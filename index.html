@@ -277,6 +277,9 @@
             let rollCount = 0;
             let coins = 0;
             
+            // Track auto-sell settings
+            let autoSellSettings = {};
+            
             // Roll button click handler
             rollButton.addEventListener('click', function() {
                 // Show spinner
@@ -300,17 +303,31 @@
                     rarityText.textContent = result;
                     rarityText.style.color = rarityColors[result];
                     
-                    // Add to inventory if space allows
-                    if (inventory.length < parseInt(inventoryCapacityDisplay.textContent)) {
-                        inventory.push(result);
-                        updateInventoryDisplay();
-                    } else {
-                        // Show inventory full message
+                    // Check auto-sell setting for this rarity
+                    if (autoSellSettings[result]) {
+                        // Auto-sell the item
+                        coins += rarityValues[result];
+                        document.getElementById('coin-count').textContent = coins;
+                        
+                        // Show auto-sell notification
                         const notification = document.createElement('div');
-                        notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
-                        notification.textContent = 'Inventory full! Sell items to make space.';
+                        notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
+                        notification.textContent = `Auto-sold ${result} for ${rarityValues[result]} coins!`;
                         document.body.appendChild(notification);
-                        setTimeout(() => notification.remove(), 3000);
+                        setTimeout(() => notification.remove(), 2000);
+                    } else {
+                        // Add to inventory if space allows
+                        if (inventory.length < parseInt(inventoryCapacityDisplay.textContent)) {
+                            inventory.push(result);
+                            updateInventoryDisplay();
+                        } else {
+                            // Show inventory full message
+                            const notification = document.createElement('div');
+                            notification.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+                            notification.textContent = 'Inventory full! Sell items to make space.';
+                            document.body.appendChild(notification);
+                            setTimeout(() => notification.remove(), 3000);
+                        }
                     }
                     
                     // Special effects for high rarities
@@ -564,14 +581,34 @@
             // Auto-sell toggles
             document.querySelectorAll('.auto-sell-toggle').forEach(button => {
                 button.addEventListener('click', function() {
+                    const rarity = this.dataset.rarity;
+                    
                     if (this.classList.contains('btn-outline-secondary')) {
+                        // Turn on auto-sell for this rarity
                         this.classList.remove('btn-outline-secondary');
                         this.classList.add('btn-success');
                         this.innerHTML = '<i class="fas fa-check-circle"></i> ON';
+                        autoSellSettings[rarity] = true;
+                        
+                        // Show notification
+                        const notification = document.createElement('div');
+                        notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
+                        notification.textContent = `Auto-sell enabled for ${rarity} items`;
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 2000);
                     } else {
+                        // Turn off auto-sell for this rarity
                         this.classList.remove('btn-success');
                         this.classList.add('btn-outline-secondary');
                         this.innerHTML = '<i class="fas fa-times-circle"></i> OFF';
+                        autoSellSettings[rarity] = false;
+                        
+                        // Show notification
+                        const notification = document.createElement('div');
+                        notification.className = 'alert alert-info position-fixed top-0 start-50 translate-middle-x mt-3';
+                        notification.textContent = `Auto-sell disabled for ${rarity} items`;
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 2000);
                     }
                 });
             });
