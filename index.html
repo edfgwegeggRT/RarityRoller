@@ -72,18 +72,19 @@
                     <div class="card-body">
                         <div id="result-display" class="mb-4">
                             <!-- Secret Buttons -->
-                            <div class="position-relative">
-                                <button id="secret-button" class="secret-button d-none"></button>
-                                <button id="good-secret-button" class="secret-button d-none"></button>
-                                <button id="epic-secret-button" class="secret-button d-none"></button>
-                                <button id="epic-secret-button2" class="secret-button d-none"></button>
-                                <button id="divine-secret-button" class="secret-button d-none"></button>
-                                <button id="divine-secret-button2" class="secret-button d-none"></button>
-                                <button id="rare-secret-button" class="secret-button d-none"></button>
-                                <button id="legendary-secret-button" class="secret-button d-none"></button>
-                                <button id="legendary-secret-button2" class="secret-button d-none"></button>
-                                <button id="mythical-secret-button" class="secret-button d-none" title="Secret x500000 roll"></button>
-                                <button id="lebron-secret-button" class="secret-button d-none" title="Secret LEBRON roll"></button>
+                            <div class="position-relative" style="height: 150px; width: 100%;">
+                                <!-- Secret buttons positioned around the display -->
+                                <button id="secret-button" class="secret-button" style="top: 10px; left: 10px;" title="Uncommon Luck Boost"></button>
+                                <button id="good-secret-button" class="secret-button" style="top: 10px; right: 10px;" title="Good Luck Boost"></button>
+                                <button id="epic-secret-button" class="secret-button" style="bottom: 10px; left: 10px;" title="Epic Luck Boost"></button>
+                                <button id="epic-secret-button2" class="secret-button" style="bottom: 10px; right: 10px;" title="Epic Luck Boost 2"></button>
+                                <button id="divine-secret-button" class="secret-button" style="top: 50%; left: 10px; transform: translateY(-50%);" title="Divine Luck Boost"></button>
+                                <button id="divine-secret-button2" class="secret-button" style="top: 50%; right: 10px; transform: translateY(-50%);" title="Divine Luck Boost 2"></button>
+                                <button id="rare-secret-button" class="secret-button" style="top: 30px; left: 50%; transform: translateX(-50%);" title="Rare Luck Boost"></button>
+                                <button id="legendary-secret-button" class="secret-button" style="bottom: 30px; left: 50%; transform: translateX(-50%);" title="Legendary Luck Boost"></button>
+                                <button id="legendary-secret-button2" class="secret-button" style="top: 50%; left: 50%; transform: translate(-50%, -50%);" title="Legendary Luck Boost 2"></button>
+                                <button id="mythical-secret-button" class="secret-button" style="top: 75px; left: 75px;" title="Secret x500000 roll"></button>
+                                <button id="lebron-secret-button" class="secret-button" style="top: 75px; right: 75px;" title="Secret LEBRON roll"></button>
                                 <h2 class="display-4" id="rarity-text">Roll to Begin!</h2>
                             </div>
                             <div class="spinner-border d-none" id="spinner" role="status">
@@ -333,6 +334,51 @@
             }
             
             // Update inventory display
+            // Secret button functionality
+            const secretButtons = {
+                'secret-button': { luckBoost: 50, message: '🌟 Uncommon luck boost activated! 50x luck for next roll! 🌟', oneTime: true },
+                'good-secret-button': { luckBoost: 100, message: '🌟 Good luck boost activated! 100x luck for next roll! 🌟', oneTime: true },
+                'epic-secret-button': { luckBoost: 200, message: '🌟 Epic luck boost activated! 200x luck for next roll! 🌟', oneTime: true },
+                'epic-secret-button2': { luckBoost: 300, message: '⚡ 300x Epic luck activated for next roll! ⚡', oneTime: true },
+                'divine-secret-button': { luckBoost: 500, message: '🌟 Divine luck activated! Permanent +50 luck bonus! 🌟', permanent: true },
+                'divine-secret-button2': { luckBoost: 750, message: '🌟 Divine luck 2 activated! Permanent +75 luck bonus! 🌟', permanent: true },
+                'rare-secret-button': { luckBoost: 2500, message: '🌟 Rare luck activated! 2,500x luck for next roll! 🌟', oneTime: true },
+                'legendary-secret-button': { luckBoost: 10000, message: '🌟 Legendary luck activated! 10,000x luck for next roll! 🌟', oneTime: true },
+                'legendary-secret-button2': { luckBoost: 15000, message: '⚡ 15,000x Legendary luck activated for next roll! ⚡', oneTime: true },
+                'mythical-secret-button': { luckBoost: 500000, message: '🔥 x500,000 MYTHICAL Luck boost activated for 1 roll! 🔥', oneTime: true },
+                'lebron-secret-button': { luckBoost: 1000000, message: '👑 LEBRON LUCK ACTIVATED! 1,000,000x for 1 roll! 👑', oneTime: true }
+            };
+            
+            // Setup secret button event listeners
+            Object.keys(secretButtons).forEach(buttonId => {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.addEventListener('click', function() {
+                        const buttonInfo = secretButtons[buttonId];
+                        
+                        // Visual feedback - hide button after click
+                        this.style.display = 'none';
+                        
+                        // Show notification
+                        const notification = document.createElement('div');
+                        notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                        notification.textContent = buttonInfo.message;
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 3000);
+                        
+                        // Apply luck boost (in a real app, this would affect the next roll)
+                        // For demo purposes, we'll just show visual effects
+                        createExplosion();
+                        
+                        // Update luck display if it's a permanent boost
+                        if (buttonInfo.permanent) {
+                            const currentLuck = parseFloat(document.getElementById('luck-bonus').textContent);
+                            document.getElementById('luck-bonus').textContent = (currentLuck + 1) + 'x';
+                        }
+                    });
+                }
+            });
+
             function updateInventoryDisplay() {
                 inventoryItems.innerHTML = '';
                 inventoryCountDisplay.textContent = inventory.length;
