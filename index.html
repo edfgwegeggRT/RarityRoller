@@ -330,6 +330,12 @@
                     inventoryUpgrade: inventoryUpgrade,
                     isLuckEnabled: isLuckEnabled,
                     autoSellSettings: autoSellSettings,
+                    permanentLuckBonus: permanentLuckBonus,
+                    clickedSecretButtons: clickedSecretButtons,
+                    dailyRewardClaimed: document.getElementById('claim-daily-reward').disabled,
+                    lastDailyRewardTime: lastDailyRewardTime || new Date().toISOString(), 
+                    luckCost: parseInt(document.getElementById('luck-cost').textContent),
+                    storageCost: parseInt(document.getElementById('storage-cost').textContent),
                     lastSave: new Date().toLocaleString()
                 };
                 
@@ -356,14 +362,25 @@
                         inventoryUpgrade = gameData.inventoryUpgrade || 0;
                         isLuckEnabled = gameData.isLuckEnabled !== undefined ? gameData.isLuckEnabled : true;
                         autoSellSettings = gameData.autoSellSettings || {};
+                        permanentLuckBonus = gameData.permanentLuckBonus || 0;
+                        clickedSecretButtons = gameData.clickedSecretButtons || [];
+                        lastDailyRewardTime = gameData.lastDailyRewardTime || null;
                         
                         // Update UI
                         rollCountDisplay.textContent = rollCount;
                         document.getElementById('coin-count').textContent = coins;
-                        document.getElementById('luck-bonus').textContent = (1 + purchasedLuck) + 'x';
+                        document.getElementById('luck-bonus').textContent = (1 + purchasedLuck + permanentLuckBonus).toFixed(1) + 'x';
                         document.getElementById('inventory-capacity').textContent = 3 + inventoryUpgrade;
                         document.getElementById('displayed-capacity').textContent = 3 + inventoryUpgrade;
                         document.getElementById('last-save-time').textContent = gameData.lastSave || 'Unknown';
+                        
+                        // Restore costs if available
+                        if (gameData.luckCost) {
+                            document.getElementById('luck-cost').textContent = gameData.luckCost;
+                        }
+                        if (gameData.storageCost) {
+                            document.getElementById('storage-cost').textContent = gameData.storageCost;
+                        }
                         
                         // Update luck status display
                         const luckStatus = document.getElementById('luck-status');
@@ -384,6 +401,34 @@
                                 button.innerHTML = '<i class="fas fa-check-circle"></i> ON';
                             }
                         });
+                        
+                        // Hide already clicked secret buttons
+                        if (clickedSecretButtons && clickedSecretButtons.length > 0) {
+                            clickedSecretButtons.forEach(buttonId => {
+                                const button = document.getElementById(buttonId);
+                                if (button) {
+                                    button.style.display = 'none';
+                                }
+                            });
+                        }
+                        
+                        // Handle daily reward state
+                        if (lastDailyRewardTime) {
+                            const lastClaimTime = new Date(lastDailyRewardTime);
+                            const now = new Date();
+                            const timeDiff = now - lastClaimTime;
+                            const hoursSinceLastClaim = timeDiff / (1000 * 60 * 60);
+                            
+                            // If claimed within the last 24 hours
+                            if (hoursSinceLastClaim < 24) {
+                                const claimButton = document.getElementById('claim-daily-reward');
+                                claimButton.disabled = true;
+                                
+                                const hoursRemaining = Math.ceil(24 - hoursSinceLastClaim);
+                                document.getElementById('daily-reward-status').innerHTML = 
+                                    `<p>Next reward available in ${hoursRemaining} hours</p>`;
+                            }
+                        }
                         
                         // Update inventory display
                         updateInventoryDisplay();
@@ -542,9 +587,10 @@
                 'lebron-secret-button': { luckBoost: 1000000, message: '👑 LEBRON LUCK ACTIVATED! 1,000,000x for 1 roll! 👑', oneTime: true }
             };
             
-            // Track temporary luck boosts
+            // Track temporary luck boosts and clicked secret buttons
             let tempLuckBoost = 0;
             let permanentLuckBonus = 0;
+            let clickedSecretButtons = [];
             
             // Setup secret button event listeners
             Object.keys(secretButtons).forEach(buttonId => {
@@ -552,6 +598,11 @@
                 if (button) {
                     button.addEventListener('click', function() {
                         const buttonInfo = secretButtons[buttonId];
+                        
+                        // Add to clicked buttons list
+                        if (!clickedSecretButtons.includes(buttonId)) {
+                            clickedSecretButtons.push(buttonId);
+                        }
                         
                         // Visual feedback - hide button after click
                         this.style.display = 'none';
@@ -783,12 +834,21 @@
                 }
             });
             
+            // Initialize the daily reward time tracker
+            let lastDailyRewardTime = null;
+            
             // Daily reward button
             document.getElementById('claim-daily-reward').addEventListener('click', function() {
                 this.disabled = true;
                 
+                // Record the time of claiming
+                lastDailyRewardTime = new Date().toISOString();
+                
                 setTimeout(() => {
+                    // Use high luck for daily rewards
+                    tempLuckBoost = 1000;
                     const result = simulateRoll();
+                    tempLuckBoost = 0;
                     
                     document.getElementById('daily-reward-status').innerHTML = '<p>Next reward available in 24h</p>';
                     document.getElementById('daily-reward-rarity').textContent = result;
@@ -807,6 +867,11 @@
                     notification.textContent = `🎁 Daily reward claimed! You got a ${result} rarity!`;
                     document.body.appendChild(notification);
                     setTimeout(() => notification.remove(), 3000);
+                    
+                    // Save game to record the daily reward claim
+                    if (isLocalStorageAvailable) {
+                        saveGameData();
+                    }
                 }, 1000);
             });
             
